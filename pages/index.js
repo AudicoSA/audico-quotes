@@ -6,10 +6,14 @@ export default function Home() {
   // Poll quote API every 5 seconds
   useEffect(() => {
     const poll = setInterval(async () => {
-      const res = await fetch("/api/quote-sync");
-      const data = await res.json();
-      if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
-        setQuoteItems((prev) => [...prev, data.product]);
+      try {
+        const res = await fetch("/api/quote-sync");
+        const data = await res.json();
+        if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
+          setQuoteItems((prev) => [...prev, data.product]);
+        }
+      } catch (err) {
+        console.error("Polling failed:", err);
       }
     }, 5000);
 
@@ -30,7 +34,17 @@ export default function Home() {
                 srcdoc='
                   <!doctype html>
                   <html lang="en">
-                    <head></head>
+                    <head>
+                      <style>
+                        html, body {
+                          margin: 0;
+                          padding: 0;
+                          height: 100%;
+                          width: 100%;
+                          overflow: hidden;
+                        }
+                      </style>
+                    </head>
                     <body>
                       <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
                       <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"></script>
@@ -39,7 +53,7 @@ export default function Home() {
               ></iframe>
             `,
           }}
-        ></div>
+        />
       </div>
 
       {/* Quote Panel */}
