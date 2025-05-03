@@ -6,14 +6,10 @@ export default function Home() {
   // Poll quote API every 5 seconds
   useEffect(() => {
     const poll = setInterval(async () => {
-      try {
-        const res = await fetch("/api/quote-sync");
-        const data = await res.json();
-        if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
-          setQuoteItems((prev) => [...prev, data.product]);
-        }
-      } catch (err) {
-        console.error("Polling failed:", err);
+      const res = await fetch("/api/quote-sync");
+      const data = await res.json();
+      if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
+        setQuoteItems((prev) => [...prev, data.product]);
       }
     }, 5000);
 
@@ -46,18 +42,23 @@ export default function Home() {
                       </style>
                       <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
                       <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"></script>
+                    </head>
+                    <body>
+                      <div id="webchat"></div>
                       <script>
-                        window.botpress.on("webchat:ready", function () {
-                          window.botpress.open();
+                        window.botpressWebChat.on("webchat:ready", function () {
+                          window.botpressWebChat.open();
+                        });
+                        window.botpressWebChat.init({
+                          selector: "#webchat"
                         });
                       </script>
-                    </head>
-                    <body></body>
+                    </body>
                   </html>'
               ></iframe>
             `,
           }}
-        />
+        ></div>
       </div>
 
       {/* Quote Panel */}
@@ -82,3 +83,4 @@ export default function Home() {
     </div>
   );
 }
+
