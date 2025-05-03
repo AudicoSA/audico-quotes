@@ -4,6 +4,59 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
+    script.async = true;
+    script.onload = () => {
+      window.botpressWebChat.init({
+        botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+        clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+        selector: "#webchat-container",
+        showPoweredBy: false,
+        themeName: "prism",
+        layoutWidth: "100%",
+        stylesheet: "",
+        configuration: {
+          botName: "Audico Bot",
+          botDescription:
+            "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
+          email: {
+            title: "support@audicoonline.co.za",
+            link: "mailto:support@audicoonline.co.za",
+          },
+          phone: {
+            title: "010 020-2882",
+            link: "tel:0100202882",
+          },
+          termsOfService: {
+            title: "Terms of service",
+            link: "https://www.audicoonline.co.za/terms-and-conditions.html",
+          },
+          privacyPolicy: {
+            title: "Privacy policy",
+            link: "https://www.audicoonline.co.za/privacy-policy.html",
+          },
+          color: "#5eb1ef",
+          variant: "soft",
+          themeMode: "light",
+          fontFamily: "inter",
+          radius: 1,
+          allowFileUpload: true,
+        },
+      });
+
+      window.botpressWebChat.on("webchat:ready", () => {
+        window.botpressWebChat.open();
+      });
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      clearInterval(poll);
+    };
+  }, []);
+
+  useEffect(() => {
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
@@ -17,60 +70,12 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
-      {/* Chat Area */}
+      {/* Embedded Chat */}
       <div className="w-1/2 p-6 border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div
-          className="h-[90vh] w-full"
-          dangerouslySetInnerHTML={{
-            __html: `
-              <iframe style="height: 100%; width: 100%; border: none;" srcdoc='
-                <!doctype html>
-                <html lang="en">
-                  <head>
-                    <style>
-                      html, body {
-                        margin: 0;
-                        padding: 0;
-                        height: 100%;
-                        width: 100%;
-                        overflow: hidden;
-                      }
-                      .bpWebchat {
-                        position: absolute !important;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        width: 100% !important;
-                        height: 100% !important;
-                      }
-                      .bpFab {
-                        display: none;
-                      }
-                    </style>
-                    <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js" defer></script>
-                    <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js" defer></script>
-                  </head>
-                  <body>
-                    <div id="webchat"></div>
-                    <script>
-                      window.addEventListener("load", () => {
-                        if (window.botpressWebChat) {
-                          window.botpressWebChat.init({
-                            selector: "#webchat"
-                          });
-                          window.botpressWebChat.on("webchat:ready", () => {
-                            window.botpressWebChat.open();
-                          });
-                        }
-                      });
-                    </script>
-                  </body>
-                </html>
-              '></iframe>
-            `,
-          }}
+          id="webchat-container"
+          style={{ width: "100%", height: "90vh", position: "relative" }}
         ></div>
       </div>
 
