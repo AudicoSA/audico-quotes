@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
-  // Poll quote API every 5 seconds
   useEffect(() => {
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
@@ -25,37 +24,51 @@ export default function Home() {
           className="h-[90vh] w-full"
           dangerouslySetInnerHTML={{
             __html: `
-              <iframe
-                style="height: 100%; width: 100%; border: none;"
-                srcdoc='
-                  <!doctype html>
-                  <html lang="en">
-                    <head>
-                      <style>
-                        html, body {
-                          margin: 0;
-                          padding: 0;
-                          height: 100%;
-                          width: 100%;
-                          overflow: hidden;
+              <iframe style="height: 100%; width: 100%; border: none;" srcdoc='
+                <!doctype html>
+                <html lang="en">
+                  <head>
+                    <style>
+                      html, body {
+                        margin: 0;
+                        padding: 0;
+                        height: 100%;
+                        width: 100%;
+                        overflow: hidden;
+                      }
+                      .bpWebchat {
+                        position: absolute !important;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        width: 100% !important;
+                        height: 100% !important;
+                      }
+                      .bpFab {
+                        display: none;
+                      }
+                    </style>
+                    <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js" defer></script>
+                    <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js" defer></script>
+                  </head>
+                  <body>
+                    <div id="webchat"></div>
+                    <script>
+                      window.addEventListener("load", () => {
+                        if (window.botpressWebChat) {
+                          window.botpressWebChat.init({
+                            selector: "#webchat"
+                          });
+                          window.botpressWebChat.on("webchat:ready", () => {
+                            window.botpressWebChat.open();
+                          });
                         }
-                      </style>
-                      <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
-                      <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"></script>
-                    </head>
-                    <body>
-                      <div id="webchat"></div>
-                      <script>
-                        window.botpressWebChat.on("webchat:ready", function () {
-                          window.botpressWebChat.open();
-                        });
-                        window.botpressWebChat.init({
-                          selector: "#webchat"
-                        });
-                      </script>
-                    </body>
-                  </html>'
-              ></iframe>
+                      });
+                    </script>
+                  </body>
+                </html>
+              '></iframe>
             `,
           }}
         ></div>
@@ -83,4 +96,3 @@ export default function Home() {
     </div>
   );
 }
-
