@@ -4,59 +4,56 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
-    script.async = true;
-    script.onload = () => {
-      window.botpressWebChat.init({
-        botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-        clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-        selector: "#webchat-container",
-        showPoweredBy: false,
-        themeName: "prism",
-        layoutWidth: "100%",
-        stylesheet: "",
-        configuration: {
-          botName: "Audico Bot",
-          botDescription:
-            "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
-          email: {
-            title: "support@audicoonline.co.za",
-            link: "mailto:support@audicoonline.co.za",
-          },
-          phone: {
-            title: "010 020-2882",
-            link: "tel:0100202882",
-          },
-          termsOfService: {
-            title: "Terms of service",
-            link: "https://www.audicoonline.co.za/terms-and-conditions.html",
-          },
-          privacyPolicy: {
-            title: "Privacy policy",
-            link: "https://www.audicoonline.co.za/privacy-policy.html",
-          },
-          color: "#5eb1ef",
-          variant: "soft",
-          themeMode: "light",
-          fontFamily: "inter",
-          radius: 1,
-          allowFileUpload: true,
-        },
-      });
+    // ✅ Ensure Botpress SDK is loaded (Vercel-safe)
+    const interval = setInterval(() => {
+      if (window.botpress) {
+        clearInterval(interval);
 
-      window.botpressWebChat.on("webchat:ready", () => {
-        window.botpressWebChat.open();
-      });
-    };
-    document.body.appendChild(script);
+        window.botpress.on("webchat:ready", () => {
+          window.botpress.open();
+        });
 
-    return () => {
-      clearInterval(poll);
-    };
-  }, []);
+        window.botpress.init({
+          botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+          clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+          selector: "#webchat",
+          configuration: {
+            botName: "Audico Bot",
+            botDescription:
+              "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
+            website: {
+              title: "www.audicoonline.co.za",
+              link: "https://www.audicoonline.co.za",
+            },
+            email: {
+              title: "support@audicoonline.co.za",
+              link: "mailto:support@audicoonline.co.za",
+            },
+            phone: {
+              title: "010 020-2882",
+              link: "tel:0100202882",
+            },
+            termsOfService: {
+              title: "Terms of service",
+              link: "https://www.audicoonline.co.za/terms-and-conditions.html",
+            },
+            privacyPolicy: {
+              title: "Privacy policy",
+              link: "https://www.audicoonline.co.za/privacy-policy.html",
+            },
+            color: "#5eb1ef",
+            variant: "soft",
+            themeMode: "light",
+            fontFamily: "inter",
+            radius: 1,
+            showPoweredBy: false,
+            allowFileUpload: true,
+          },
+        });
+      }
+    }, 100);
 
-  useEffect(() => {
+    // 🌀 Poll quote API every 5 seconds
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
@@ -65,18 +62,18 @@ export default function Home() {
       }
     }, 5000);
 
-    return () => clearInterval(poll);
+    return () => {
+      clearInterval(interval);
+      clearInterval(poll);
+    };
   }, [quoteItems]);
 
   return (
     <div className="flex h-screen">
-      {/* Embedded Chat */}
+      {/* Chat Panel */}
       <div className="w-1/2 p-6 border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div
-          id="webchat-container"
-          style={{ width: "100%", height: "90vh", position: "relative" }}
-        ></div>
+        <div id="webchat" className="h-[90vh] w-full" />
       </div>
 
       {/* Quote Panel */}
@@ -101,3 +98,4 @@ export default function Home() {
     </div>
   );
 }
+
