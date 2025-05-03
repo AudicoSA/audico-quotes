@@ -5,8 +5,11 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        {/* ✅ Botpress WebChat SDK */}
-        <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js" />
+        {/* ✅ Botpress WebChat SDK (async to avoid build error) */}
+        <script
+          async
+          src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"
+        ></script>
         <style>{`
           #webchat .bpWebchat {
             position: unset;

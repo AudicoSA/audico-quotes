@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    // Wait for Botpress script to load before calling .on/init
+    // Wait for Botpress script to load
     const interval = setInterval(() => {
       if (window.botpress) {
         clearInterval(interval);
@@ -53,15 +54,19 @@ export default function Home() {
       }
     }, 100);
 
-    // Poll quote API every 5 seconds
+    // Poll quote API
     const poll = setInterval(async () => {
-      const res = await fetch("/api/quote-sync");
-      const data = await res.json();
-      if (
-        data?.product &&
-        !quoteItems.find((i) => i.name === data.product.name)
-      ) {
-        setQuoteItems((prev) => [...prev, data.product]);
+      try {
+        const res = await fetch("/api/quote-sync");
+        const data = await res.json();
+        if (
+          data?.product &&
+          !quoteItems.find((i) => i.name === data.product.name)
+        ) {
+          setQuoteItems((prev) => [...prev, data.product]);
+        }
+      } catch (err) {
+        console.error("Polling error:", err.message);
       }
     }, 5000);
 
@@ -73,14 +78,14 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
-      {/* Chat Area */}
+      {/* Chat Panel */}
       <div className="w-1/2 p-6 border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="h-[90vh] w-full"></div>
       </div>
 
       {/* Quote Panel */}
-      <div className="w-1/2 p-6">
+      <div className="w-1/2 p-6 overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
         {quoteItems.length === 0 ? (
           <p className="text-gray-500">No products added yet.</p>
@@ -91,7 +96,13 @@ export default function Home() {
                 <p className="font-bold">{item.name}</p>
                 <p>Price: {item.price}</p>
                 {item.image && (
-                  <img src={item.image} alt={item.name} className="w-32 mt-2" />
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={128}
+                    height={128}
+                    className="mt-2"
+                  />
                 )}
               </li>
             ))}
