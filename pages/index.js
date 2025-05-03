@@ -44,11 +44,15 @@ export default function Home() {
                           overflow: hidden;
                         }
                       </style>
-                    </head>
-                    <body>
                       <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
                       <script src="https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"></script>
-                    </body>
+                      <script>
+                        window.botpress.on("webchat:ready", function () {
+                          window.botpress.open();
+                        });
+                      </script>
+                    </head>
+                    <body></body>
                   </html>'
               ></iframe>
             `,
