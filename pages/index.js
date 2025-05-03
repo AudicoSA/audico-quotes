@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    // Wait for Botpress script to load
+    // ✅ Ensure Botpress only runs in browser and is loaded
     const interval = setInterval(() => {
-      if (window.botpress) {
+      if (typeof window !== "undefined" && window.botpress) {
         clearInterval(interval);
 
+        console.log("✅ Botpress loaded");
+
         window.botpress.on("webchat:ready", () => {
+          console.log("✅ Botpress is ready");
           window.botpress.open();
         });
 
@@ -52,9 +54,9 @@ export default function Home() {
           },
         });
       }
-    }, 100);
+    }, 300);
 
-    // Poll quote API
+    // ✅ Poll for added quote products every 5s
     const poll = setInterval(async () => {
       try {
         const res = await fetch("/api/quote-sync");
@@ -78,7 +80,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
-      {/* Chat Panel */}
+      {/* Chat Area */}
       <div className="w-1/2 p-6 border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="h-[90vh] w-full"></div>
@@ -96,12 +98,10 @@ export default function Home() {
                 <p className="font-bold">{item.name}</p>
                 <p>Price: {item.price}</p>
                 {item.image && (
-                  <Image
+                  <img
                     src={item.image}
                     alt={item.name}
-                    width={128}
-                    height={128}
-                    className="mt-2"
+                    className="w-32 mt-2"
                   />
                 )}
               </li>
