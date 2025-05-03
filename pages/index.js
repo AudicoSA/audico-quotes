@@ -1,62 +1,23 @@
-// pages/index.js
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    // ✅ Dynamically load Botpress SDK (guaranteed to be ready)
+    // Inject Botpress script dynamically
     const script = document.createElement("script");
     script.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
     script.async = true;
     script.onload = () => {
-      // ✅ Open and init Botpress only after it's loaded
-      window.botpress.on("webchat:ready", () => {
-        window.botpress.open();
-      });
-
-      window.botpress.init({
-        botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-        clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+      window.botpressWebChat.init({
+        configUrl:
+          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js",
         selector: "#webchat",
-        configuration: {
-          botName: "Audico Bot",
-          botDescription:
-            "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
-          website: {
-            title: "www.audicoonline.co.za",
-            link: "https://www.audicoonline.co.za",
-          },
-          email: {
-            title: "support@audicoonline.co.za",
-            link: "mailto:support@audicoonline.co.za",
-          },
-          phone: {
-            title: "010 020-2882",
-            link: "tel:0100202882",
-          },
-          termsOfService: {
-            title: "Terms of service",
-            link: "https://www.audicoonline.co.za/terms-and-conditions.html",
-          },
-          privacyPolicy: {
-            title: "Privacy policy",
-            link: "https://www.audicoonline.co.za/privacy-policy.html",
-          },
-          color: "#5eb1ef",
-          variant: "soft",
-          themeMode: "light",
-          fontFamily: "inter",
-          radius: 1,
-          showPoweredBy: false,
-          allowFileUpload: true,
-        },
       });
     };
+    document.body.appendChild(script);
 
-    document.head.appendChild(script);
-
-    // 🔄 Poll the quote-sync API for live updates
+    // Poll quote sync API
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
@@ -73,13 +34,13 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
-      {/* Chat Column */}
+      {/* Chat Area */}
       <div className="w-1/2 p-6 border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div id="webchat" className="h-[90vh] w-full"></div>
+        <div id="webchat" className="h-[90vh] w-full" />
       </div>
 
-      {/* Quote Column */}
+      {/* Quote Panel */}
       <div className="w-1/2 p-6 overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
         {quoteItems.length === 0 ? (
@@ -91,11 +52,7 @@ export default function Home() {
                 <p className="font-bold">{item.name}</p>
                 <p>Price: {item.price}</p>
                 {item.image && (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-32 mt-2"
-                  />
+                  <img src={item.image} alt={item.name} className="w-32 mt-2" />
                 )}
               </li>
             ))}
