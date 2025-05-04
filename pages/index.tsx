@@ -10,49 +10,74 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    const waitForWebchatDiv = () => {
-      const webchatDiv = document.getElementById("webchat");
-      if (!webchatDiv) {
-        console.log("⏳ Waiting for #webchat container...");
-        return setTimeout(waitForWebchatDiv, 100);
+    const container = document.getElementById("webchat");
+
+    if (!container) {
+      console.warn("❌ Webchat container not found.");
+      return;
+    }
+
+    // Inject styles from Botpress docs
+    const styleTag = document.createElement("style");
+    styleTag.innerHTML = `
+      #webchat .bpWebchat {
+        position: unset;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        max-width: 100%;
       }
 
-      console.log("✅ #webchat container found. Loading Botpress...");
+      #webchat .bpFab {
+        display: none;
+      }
+    `;
+    document.head.appendChild(styleTag);
 
-      // Load inject.js
-      const injectScript = document.createElement("script");
-      injectScript.id = "botpress-webchat-inject";
-      injectScript.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
-      injectScript.async = true;
+    // Load inject.js
+    const injectScript = document.createElement("script");
+    injectScript.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
+    injectScript.async = true;
 
-      injectScript.onload = () => {
-        console.log("✅ Botpress inject.js loaded");
+    injectScript.onload = () => {
+      const inlineScript = document.createElement("script");
+      inlineScript.innerHTML = `
+        window.botpress.on("webchat:ready", () => {
+          window.botpress.open();
+        });
 
-        const configScript = document.createElement("script");
-        configScript.src =
-          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // Your actual config
-        configScript.async = true;
-
-        configScript.onload = () => {
-          console.log("✅ Botpress config script loaded and initialized");
-        };
-
-        configScript.onerror = () => {
-          console.error("❌ Failed to load Botpress config script");
-        };
-
-        document.body.appendChild(configScript);
-      };
-
-      injectScript.onerror = () => {
-        console.error("❌ Failed to load Botpress inject.js");
-      };
-
-      document.body.appendChild(injectScript);
+        window.botpress.init({
+          botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+          clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+          selector: "#webchat",
+          configuration: {
+            botName: "Audico Bot",
+            botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
+            website: { title: "www.audicoonline.co.za", link: "https://www.audicoonline.co.za" },
+            email: { title: "support@audicoonline.co.za", link: "mailto:support@audicoonline.co.za" },
+            phone: { title: "010 020-2882", link: "tel:0100202882" },
+            termsOfService: { title: "Terms", link: "https://www.audicoonline.co.za/terms-and-conditions.html" },
+            privacyPolicy: { title: "Privacy", link: "https://www.audicoonline.co.za/privacy-policy.html" },
+            color: "#5eb1ef",
+            variant: "soft",
+            themeMode: "light",
+            fontFamily: "inter",
+            radius: 1,
+            showPoweredBy: false,
+            allowFileUpload: true
+          }
+        });
+      `;
+      document.body.appendChild(inlineScript);
     };
 
-    waitForWebchatDiv();
+    injectScript.onerror = () => {
+      console.error("❌ Failed to load Botpress inject.js");
+    };
 
+    document.head.appendChild(injectScript);
+
+    // Start polling for quote updates
     const poll = setInterval(async () => {
       try {
         const res = await fetch("/api/quote-sync");
