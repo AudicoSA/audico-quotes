@@ -1,3 +1,4 @@
+
 export default async function handler(req, res) {
   try {
     const { productName } = req.body;
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
     global.quoteSync = {
       product: {
         name: product.name,
-        price: product.price,
+        price: product.special || product.price,
         image: product.thumb || null,
       },
     };
