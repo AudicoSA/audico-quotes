@@ -10,54 +10,31 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    const container = document.getElementById("botpress-wrapper");
-    if (!container) return;
+    const interval = setInterval(() => {
+      if (typeof window !== "undefined" && (window as any).botpress?.init) {
+        clearInterval(interval);
 
-    container.innerHTML = `
-      <style>
-        #webchat .bpWebchat {
-          position: unset;
-          width: 100%;
-          height: 100%;
-          max-height: 100%;
-          max-width: 100%;
-        }
-        #webchat .bpFab {
-          display: none;
-        }
-      </style>
-      <div id="webchat" style="width: 100%; height: 100%;"></div>
-      <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
-      <script>
-        window.botpress.on("webchat:ready", () => {
-          window.botpress.open();
+        (window as any).botpress.on("webchat:ready", () => {
+          (window as any).botpress.open();
         });
-        window.botpress.init({
+
+        (window as any).botpress.init({
           botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
           clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
           selector: "#webchat",
           configuration: {
             botName: "Audico Bot",
             botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
-            website: {
-              title: "www.audicoonline.co.za",
-              link: "https://www.audicoonline.co.za"
-            },
-            email: {
-              title: "support@audicoonline.co.za",
-              link: "mailto:support@audicoonline.co.za"
-            },
-            phone: {
-              title: "010 020-2882",
-              link: "tel:0100202882"
-            },
+            website: { title: "www.audicoonline.co.za", link: "https://www.audicoonline.co.za" },
+            email: { title: "support@audicoonline.co.za", link: "mailto:support@audicoonline.co.za" },
+            phone: { title: "010 020-2882", link: "tel:0100202882" },
             termsOfService: {
-              title: "Terms of service",
-              link: "https://www.audicoonline.co.za/terms-and-conditions.html"
+              title: "Terms",
+              link: "https://www.audicoonline.co.za/terms-and-conditions.html",
             },
             privacyPolicy: {
-              title: "Privacy policy",
-              link: "https://www.audicoonline.co.za/privacy-policy.html"
+              title: "Privacy",
+              link: "https://www.audicoonline.co.za/privacy-policy.html",
             },
             color: "#5eb1ef",
             variant: "soft",
@@ -65,23 +42,14 @@ export default function Home() {
             fontFamily: "inter",
             radius: 1,
             showPoweredBy: false,
-            allowFileUpload: true
-          }
+            allowFileUpload: true,
+          },
         });
-      </script>
-    `;
+      }
+    }, 100);
 
-    // Force React to run those <script> tags
-    const scripts = container.querySelectorAll("script");
-    scripts.forEach((script) => {
-      const newScript = document.createElement("script");
-      Array.from(script.attributes).forEach(attr => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      if (script.textContent) newScript.textContent = script.textContent;
-      script.replaceWith(newScript);
-    });
-  }, []);
+    return () => clearInterval(interval);
+  }, [quoteItems]);
 
   const handleRemove = (index: number) => {
     setQuoteItems((prev) => prev.filter((_, i) => i !== index));
@@ -127,7 +95,7 @@ export default function Home() {
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div
-          id="botpress-wrapper"
+          id="webchat"
           className="min-h-screen w-full"
           style={{ width: "100%", height: "100%", position: "relative" }}
         />
