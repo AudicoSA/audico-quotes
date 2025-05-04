@@ -1,16 +1,18 @@
+
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    // ✅ Ensure Botpress SDK is loaded (Vercel-safe)
     const interval = setInterval(() => {
       if (window.botpress) {
         clearInterval(interval);
 
         window.botpress.on("webchat:ready", () => {
-          window.botpress.open();
+          if (window.innerWidth < 768) {
+            window.botpress.open();
+          }
         });
 
         window.botpress.init({
@@ -53,7 +55,6 @@ export default function Home() {
       }
     }, 100);
 
-    // 🌀 Poll quote API every 5 seconds
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
@@ -69,15 +70,15 @@ export default function Home() {
   }, [quoteItems]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col md:flex-row h-screen">
       {/* Chat Panel */}
-      <div className="w-1/2 p-6 border-r border-gray-200">
+      <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div id="webchat" className="h-[90vh] w-full" />
+        <div id="webchat" className="h-[60vh] md:h-[90vh] w-full" />
       </div>
 
       {/* Quote Panel */}
-      <div className="w-1/2 p-6 overflow-y-auto">
+      <div className="w-full md:w-1/2 p-6 overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
         {quoteItems.length === 0 ? (
           <p className="text-gray-500">No products added yet.</p>
@@ -98,4 +99,3 @@ export default function Home() {
     </div>
   );
 }
-
