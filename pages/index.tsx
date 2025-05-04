@@ -17,26 +17,40 @@ export default function Home() {
       script.id = "botpress-webchat-script";
       script.src = "https://cdn.botpress.cloud/webchat/v0/inject.js";
       script.async = true;
+
       script.onload = () => {
         const webchat = (window as any).botpressWebChat;
-        if (webchat) {
-          webchat.init({
-            botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-            clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-            container: "#webchat", // use container not selector
-            lazySocket: true,
-            hideWidget: true,
-            theme: "light",
-            stylesheet: "https://cdn.botpress.cloud/webchat/v0/themes/default.css",
-            useSessionStorage: true,
-            showPoweredBy: false,
-            themeName: "prism",
-            enableReset: true,
-            enableTranscriptDownload: false
-          });
+        console.log("✅ BotpressWebChat object:", webchat);
 
-          webchat.sendEvent({ type: "show" }); // ensure it opens immediately
+        if (webchat) {
+          try {
+            webchat.init({
+              botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+              clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+              container: "#webchat",
+              lazySocket: true,
+              hideWidget: true,
+              theme: "light",
+              stylesheet: "https://cdn.botpress.cloud/webchat/v0/themes/default.css",
+              useSessionStorage: true,
+              showPoweredBy: false,
+              themeName: "prism",
+              enableReset: true,
+              enableTranscriptDownload: false,
+            });
+
+            webchat.sendEvent({ type: "show" });
+            console.log("✅ Botpress initialized and opened");
+          } catch (err) {
+            console.error("❌ Botpress init failed:", err);
+          }
+        } else {
+          console.warn("⚠️ BotpressWebChat not available on window.");
         }
+      };
+
+      script.onerror = () => {
+        console.error("❌ Failed to load Botpress WebChat script.");
       };
 
       document.body.appendChild(script);
@@ -45,10 +59,14 @@ export default function Home() {
     loadBotpress();
 
     const poll = setInterval(async () => {
-      const res = await fetch("/api/quote-sync");
-      const data = await res.json();
-      if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
-        setQuoteItems((prev) => [...prev, data.product]);
+      try {
+        const res = await fetch("/api/quote-sync");
+        const data = await res.json();
+        if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
+          setQuoteItems((prev) => [...prev, data.product]);
+        }
+      } catch (err) {
+        console.error("❌ Polling error:", err);
       }
     }, 5000);
 
@@ -60,21 +78,29 @@ export default function Home() {
   };
 
   const handlePrint = async () => {
-    const res = await fetch("/api/generate-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quoteItems }),
-    });
+    try {
+      const res = await fetch("/api/generate-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteItems }),
+      });
 
-    if (!res.ok) return alert("❌ PDF generation failed.");
+      if (!res.ok) {
+        console.error("❌ PDF generation failed. Response:", res.status, res.statusText);
+        return alert("❌ PDF generation failed.");
+      }
 
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "audico-quote.pdf";
-    a.click();
-    URL.revokeObjectURL(url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "audico-quote.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("❌ PDF generation error:", err);
+      alert("❌ PDF generation failed.");
+    }
   };
 
   const handleEmailQuote = () => {
@@ -86,11 +112,15 @@ export default function Home() {
   };
 
   const handleTestAddProduct = async () => {
-    await fetch("/api/add-to-quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: "Denon AVR-X1800H" }),
-    });
+    try {
+      await fetch("/api/add-to-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName: "Denon AVR-X1800H" }),
+      });
+    } catch (err) {
+      console.error("❌ Add product failed:", err);
+    }
   };
 
   return (
