@@ -33,43 +33,54 @@ export default function Home() {
           window.botpress.open();
         });
         window.botpress.init({
-          "botId": "39331f76-3b0d-434a-a550-bc4f60195d9e",
-          "clientId": "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-          "selector": "#webchat",
-          "configuration": {
-            "botName": "Audico Bot",
-            "botDescription": "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
-            "website": {
-              "title": "www.audicoonline.co.za",
-              "link": "https://www.audicoonline.co.za"
+          botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+          clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+          selector: "#webchat",
+          configuration: {
+            botName: "Audico Bot",
+            botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
+            website: {
+              title: "www.audicoonline.co.za",
+              link: "https://www.audicoonline.co.za"
             },
-            "email": {
-              "title": "support@audicoonline.co.za",
-              "link": "mailto:support@audicoonline.co.za"
+            email: {
+              title: "support@audicoonline.co.za",
+              link: "mailto:support@audicoonline.co.za"
             },
-            "phone": {
-              "title": "010 020-2882",
-              "link": "tel:0100202882"
+            phone: {
+              title: "010 020-2882",
+              link: "tel:0100202882"
             },
-            "termsOfService": {
-              "title": "Terms of service",
-              "link": "https://www.audicoonline.co.za/terms-and-conditions.html"
+            termsOfService: {
+              title: "Terms of service",
+              link: "https://www.audicoonline.co.za/terms-and-conditions.html"
             },
-            "privacyPolicy": {
-              "title": "Privacy policy",
-              "link": "https://www.audicoonline.co.za/privacy-policy.html"
+            privacyPolicy: {
+              title: "Privacy policy",
+              link: "https://www.audicoonline.co.za/privacy-policy.html"
             },
-            "color": "#5eb1ef",
-            "variant": "soft",
-            "themeMode": "light",
-            "fontFamily": "inter",
-            "radius": 1,
-            "showPoweredBy": false,
-            "allowFileUpload": true
+            color: "#5eb1ef",
+            variant: "soft",
+            themeMode: "light",
+            fontFamily: "inter",
+            radius: 1,
+            showPoweredBy: false,
+            allowFileUpload: true
           }
         });
       </script>
     `;
+
+    // Force React to run those <script> tags
+    const scripts = container.querySelectorAll("script");
+    scripts.forEach((script) => {
+      const newScript = document.createElement("script");
+      Array.from(script.attributes).forEach(attr => {
+        newScript.setAttribute(attr.name, attr.value);
+      });
+      if (script.textContent) newScript.textContent = script.textContent;
+      script.replaceWith(newScript);
+    });
   }, []);
 
   const handleRemove = (index: number) => {
