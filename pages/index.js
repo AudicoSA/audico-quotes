@@ -71,7 +71,7 @@ export default function Home() {
       {/* Chat Panel */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div id="webchat" className="h-[60vh] md:h-[90vh] w-full" />
+        <div id="webchat" className="min-h-[500px] h-[60vh] md:h-[90vh] w-full" />
       </div>
 
       {/* Quote Panel */}
