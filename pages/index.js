@@ -9,7 +9,7 @@ export default function Home() {
         clearInterval(interval);
 
         window.botpress.on("webchat:ready", () => {
-          window.botpress.open(); // ✅ Always open chat on all devices
+          window.botpress.open();
         });
 
         window.botpress.init({
@@ -75,12 +75,10 @@ export default function Home() {
   };
 
   const handleEmailQuote = () => {
-    console.log("Email quote logic here");
     alert("📧 Email feature coming soon.");
   };
 
   const handleAddToCart = () => {
-    console.log("Add to cart logic here");
     alert("🛒 Add to cart feature coming soon.");
   };
 
@@ -93,12 +91,12 @@ export default function Home() {
       </div>
 
       {/* Quote Panel */}
-      <div className="w-full md:w-1/2 p-6 overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
-        {quoteItems.length === 0 ? (
-          <p className="text-gray-500">No products added yet.</p>
-        ) : (
-          <>
+      <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
+          {quoteItems.length === 0 ? (
+            <p className="text-gray-500">No products added yet.</p>
+          ) : (
             <ul className="space-y-4">
               {quoteItems.map((item, index) => (
                 <li key={index} className="p-4 border rounded shadow relative">
@@ -117,14 +115,30 @@ export default function Home() {
                 </li>
               ))}
             </ul>
+          )}
+        </div>
 
-            <div className="flex gap-4 mt-6">
-              <button onClick={handlePrint} className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Print</button>
-              <button onClick={handleEmailQuote} className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Email</button>
-              <button onClick={handleAddToCart} className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded">Add to Cart</button>
-            </div>
-          </>
-        )}
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4 mt-6">
+          <button
+            onClick={handlePrint}
+            className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium"
+          >
+            📄 PDF Download
+          </button>
+          <button
+            onClick={handleEmailQuote}
+            className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium"
+          >
+            📧 Email Quote
+          </button>
+          <button
+            onClick={handleAddToCart}
+            className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded shadow-sm text-sm font-medium"
+          >
+            🛒 Add to Cart
+          </button>
+        </div>
       </div>
     </div>
   );
