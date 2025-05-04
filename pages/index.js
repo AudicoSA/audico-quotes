@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -56,7 +55,9 @@ export default function Home() {
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
-      if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
+      console.log("🔁 Quote Sync Poll:", data);  // Debug log
+
+      if (data?.product && (!quoteItems.length || !quoteItems.some(i => i.name === data.product.name))) {
         setQuoteItems((prev) => [...prev, data.product]);
       }
     }, 5000);
