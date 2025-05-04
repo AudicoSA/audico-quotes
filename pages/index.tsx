@@ -10,24 +10,24 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
+    // Dynamically load Botpress only once
     const loadBotpress = () => {
-      const existingScript = document.getElementById("botpress-webchat-script");
-      if (existingScript) return;
+      if (document.getElementById("botpress-webchat-script")) return;
 
       const script = document.createElement("script");
       script.id = "botpress-webchat-script";
       script.src = "https://cdn.botpress.cloud/webchat/v0/inject.js";
       script.async = true;
       script.onload = () => {
-        if (window.botpress) {
-          window.botpress.init({
+        const bp = (window as any).botpress;
+        if (bp) {
+          bp.init({
             botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
             clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
             selector: "#webchat",
             configuration: {
               botName: "Audico Bot",
-              botDescription:
-                "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
+              botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico, how can I help you today?",
               website: {
                 title: "www.audicoonline.co.za",
                 link: "https://www.audicoonline.co.za",
@@ -58,8 +58,8 @@ export default function Home() {
             },
           });
 
-          window.botpress.on("webchat:ready", () => {
-            window.botpress.open();
+          bp.on("webchat:ready", () => {
+            bp.open(); // Ensure chat auto-opens
           });
         }
       };
@@ -67,29 +67,23 @@ export default function Home() {
       document.body.appendChild(script);
     };
 
-    if (document.readyState === "complete") {
-      loadBotpress();
-    } else {
-      window.addEventListener("DOMContentLoaded", loadBotpress);
-    }
+    loadBotpress();
 
+    // Poll for quote items every 5s
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
-      console.log("🔁 Quote Sync Poll:", data);
-
-      if (data?.product && (!quoteItems.length || !quoteItems.some(i => i.name === data.product.name))) {
+      if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
         setQuoteItems((prev) => [...prev, data.product]);
       }
     }, 5000);
 
-    return () => {
-      clearInterval(poll);
-    };
+    return () => clearInterval(poll);
   }, [quoteItems]);
 
-  const handleRemove = (indexToRemove: number) => {
-    setQuoteItems((prev) => prev.filter((_, i) => i !== indexToRemove));
+  // Actions
+  const handleRemove = (index: number) => {
+    setQuoteItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePrint = async () => {
@@ -131,11 +125,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
+      {/* Chat */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="min-h-[500px] h-[60vh] md:h-[90vh] w-full" />
       </div>
 
+      {/* Quote */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
@@ -154,15 +150,14 @@ export default function Home() {
                   </button>
                   <p className="font-bold">{item.name}</p>
                   <p>Price: {item.price}</p>
-                  {item.image && (
-                    <img src={item.image} alt={item.name} className="w-32 mt-2" />
-                  )}
+                  {item.image && <img src={item.image} alt={item.name} className="w-32 mt-2" />}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
+        {/* Quote Actions */}
         <div className="flex flex-wrap gap-4 mt-6">
           <button
             onClick={handlePrint}
@@ -193,3 +188,4 @@ export default function Home() {
     </div>
   );
 }
+
