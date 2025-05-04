@@ -15,7 +15,7 @@ export default function Home() {
 
       const script = document.createElement("script");
       script.id = "botpress-webchat-script";
-      script.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";  // v2.4 URL for the Botpress Webchat script
+      script.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js"; // Updated to v2.4
       script.async = true;
 
       script.onload = () => {
@@ -27,7 +27,7 @@ export default function Home() {
             webchat.init({
               botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
               clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-              container: "#webchat",  // Ensuring correct container ID
+              container: "#webchat",
               lazySocket: true,
               hideWidget: true,
               useSessionStorage: true,
@@ -35,11 +35,11 @@ export default function Home() {
               themeName: "prism",
               enableReset: true,
               enableTranscriptDownload: false,
-              stylesheet: "https://cdn.botpress.cloud/webchat/v2.4/themes/default.css",  // Correct stylesheet URL for v2.4
+              stylesheet: "https://cdn.botpress.cloud/webchat/v2.4/themes/default.css", // Updated to v2.4
               showPoweredBy: false,
             });
 
-            webchat.sendEvent({ type: "show" }); // Ensure it opens automatically after loading
+            webchat.sendEvent({ type: "show" });
             console.log("✅ Botpress initialized");
           } catch (err) {
             console.error("❌ Botpress init error:", err);
@@ -117,13 +117,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Chat Section */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="min-h-[500px] h-[60vh] md:h-[90vh] w-full" />
       </div>
 
-      {/* Live Quote Section */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
@@ -151,7 +149,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Actions Section */}
         <div className="flex flex-wrap gap-4 mt-6">
           <button
             onClick={handlePrint}
