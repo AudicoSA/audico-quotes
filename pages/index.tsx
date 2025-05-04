@@ -10,10 +10,16 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    const loadBotpress = () => {
-      if (document.getElementById("botpress-webchat-inject")) return;
+    const waitForWebchatDiv = () => {
+      const webchatDiv = document.getElementById("webchat");
+      if (!webchatDiv) {
+        console.log("⏳ Waiting for #webchat container...");
+        return setTimeout(waitForWebchatDiv, 100);
+      }
 
-      // Load Botpress inject.js
+      console.log("✅ #webchat container found. Loading Botpress...");
+
+      // Load inject.js
       const injectScript = document.createElement("script");
       injectScript.id = "botpress-webchat-inject";
       injectScript.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
@@ -24,7 +30,7 @@ export default function Home() {
 
         const configScript = document.createElement("script");
         configScript.src =
-          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // keep your original config script
+          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // Your actual config
         configScript.async = true;
 
         configScript.onload = () => {
@@ -45,7 +51,7 @@ export default function Home() {
       document.body.appendChild(injectScript);
     };
 
-    loadBotpress();
+    waitForWebchatDiv();
 
     const poll = setInterval(async () => {
       try {
