@@ -13,7 +13,7 @@ export default function Home() {
     const loadBotpress = () => {
       if (document.getElementById("botpress-webchat-inject")) return;
 
-      // Load inject.js script first
+      // Load Botpress inject.js
       const injectScript = document.createElement("script");
       injectScript.id = "botpress-webchat-inject";
       injectScript.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
@@ -22,10 +22,9 @@ export default function Home() {
       injectScript.onload = () => {
         console.log("✅ Botpress inject.js loaded");
 
-        // Then load your Botpress config file
         const configScript = document.createElement("script");
         configScript.src =
-          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // Replace with your actual config file if different
+          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // keep your original config script
         configScript.async = true;
 
         configScript.onload = () => {
@@ -110,7 +109,7 @@ export default function Home() {
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div
-          id="webchat-container"
+          id="webchat"
           className="min-h-screen w-full"
           style={{ position: "relative", width: "100%", height: "100%" }}
         />
