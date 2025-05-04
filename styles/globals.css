@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optional custom styles */
+body {
+  background: #fff;
+  color: #000;
+  font-family: Arial, sans-serif;
+}

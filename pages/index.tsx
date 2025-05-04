@@ -10,7 +10,6 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    // Dynamically load Botpress only once
     const loadBotpress = () => {
       if (document.getElementById("botpress-webchat-script")) return;
 
@@ -19,7 +18,7 @@ export default function Home() {
       script.src = "https://cdn.botpress.cloud/webchat/v0/inject.js";
       script.async = true;
       script.onload = () => {
-        const bp = (window as any).botpress;
+        const bp = window.botpress;
         if (bp) {
           bp.init({
             botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
@@ -59,7 +58,7 @@ export default function Home() {
           });
 
           bp.on("webchat:ready", () => {
-            bp.open(); // Ensure chat auto-opens
+            bp.open(); // Auto-open chat
           });
         }
       };
@@ -69,7 +68,6 @@ export default function Home() {
 
     loadBotpress();
 
-    // Poll for quote items every 5s
     const poll = setInterval(async () => {
       const res = await fetch("/api/quote-sync");
       const data = await res.json();
@@ -81,30 +79,26 @@ export default function Home() {
     return () => clearInterval(poll);
   }, [quoteItems]);
 
-  // Actions
   const handleRemove = (index: number) => {
     setQuoteItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handlePrint = async () => {
-    const response = await fetch("/api/generate-pdf", {
+    const res = await fetch("/api/generate-pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quoteItems }),
     });
 
-    if (!response.ok) {
-      alert("Failed to generate PDF.");
-      return;
-    }
+    if (!res.ok) return alert("❌ PDF generation failed.");
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "audico-quote.pdf";
     a.click();
-    window.URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
   };
 
   const handleEmailQuote = () => {
@@ -125,13 +119,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Chat */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="min-h-[500px] h-[60vh] md:h-[90vh] w-full" />
       </div>
 
-      {/* Quote */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
@@ -157,7 +149,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Quote Actions */}
         <div className="flex flex-wrap gap-4 mt-6">
           <button
             onClick={handlePrint}
@@ -188,4 +179,3 @@ export default function Home() {
     </div>
   );
 }
-
