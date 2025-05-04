@@ -11,52 +11,39 @@ export default function Home() {
 
   useEffect(() => {
     const loadBotpress = () => {
-      if (document.getElementById("botpress-webchat-script")) return;
+      if (document.getElementById("botpress-webchat-inject")) return;
 
-      const script = document.createElement("script");
-      script.id = "botpress-webchat-script";
-      script.src = "https://cdn.botpress.cloud/webchat/v2.2/inject.js";
-      script.async = true;
+      // Load inject.js script first
+      const injectScript = document.createElement("script");
+      injectScript.id = "botpress-webchat-inject";
+      injectScript.src = "https://cdn.botpress.cloud/webchat/v2.4/inject.js";
+      injectScript.async = true;
 
-      script.onload = () => {
-        console.log("✅ Botpress script loaded");
-        const webchat = (window as any).botpressWebChat;
+      injectScript.onload = () => {
+        console.log("✅ Botpress inject.js loaded");
 
-        if (webchat) {
-          try {
-            console.log("🔧 Initializing Botpress...");
-            setTimeout(() => {
-              webchat.init({
-                botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-                clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-                container: "#webchat-container",
-                lazySocket: true,
-                hideWidget: false, // Make sure widget is visible
-                useSessionStorage: true,
-                theme: "light",
-                themeName: "prism",
-                enableReset: true,
-                enableTranscriptDownload: false,
-                stylesheet: "https://cdn.botpress.cloud/webchat/v2.2/themes/default.css",
-                showPoweredBy: false,
-              });
+        // Then load your Botpress config file
+        const configScript = document.createElement("script");
+        configScript.src =
+          "https://files.bpcontent.cloud/2025/04/23/17/20250423172151-6PCWRVYD.js"; // Replace with your actual config file if different
+        configScript.async = true;
 
-              webchat.sendEvent({ type: "show" });
-              console.log("✅ Botpress initialized and shown");
-            }, 500); // Small delay to ensure DOM is ready
-          } catch (err) {
-            console.error("❌ Botpress init error:", err);
-          }
-        } else {
-          console.warn("⚠️ window.botpressWebChat not available");
-        }
+        configScript.onload = () => {
+          console.log("✅ Botpress config script loaded and initialized");
+        };
+
+        configScript.onerror = () => {
+          console.error("❌ Failed to load Botpress config script");
+        };
+
+        document.body.appendChild(configScript);
       };
 
-      script.onerror = () => {
-        console.error("❌ Failed to load Botpress WebChat v2.2");
+      injectScript.onerror = () => {
+        console.error("❌ Failed to load Botpress inject.js");
       };
 
-      document.body.appendChild(script);
+      document.body.appendChild(injectScript);
     };
 
     loadBotpress();
@@ -125,7 +112,7 @@ export default function Home() {
         <div
           id="webchat-container"
           className="min-h-screen w-full"
-          style={{ position: "relative", height: "100%" }}
+          style={{ position: "relative", width: "100%", height: "100%" }}
         />
       </div>
 
