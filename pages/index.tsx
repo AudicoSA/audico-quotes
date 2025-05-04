@@ -11,8 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     const loadBotpress = () => {
-      const existing = document.getElementById("botpress-webchat-script");
-      if (existing) return;
+      if (document.getElementById("botpress-webchat-script")) return;
 
       const script = document.createElement("script");
       script.id = "botpress-webchat-script";
@@ -20,14 +19,38 @@ export default function Home() {
       script.async = true;
 
       script.onload = () => {
-        const configScript = document.createElement("script");
-        configScript.src = "https://files.bpcontent.cloud/2025/03/18/14/20250318141028-30WRMG85.js";
-        configScript.async = true;
-        document.body.appendChild(configScript);
+        const webchat = (window as any).botpressWebChat;
+        console.log("✅ BotpressWebChat loaded:", webchat);
+
+        if (webchat) {
+          try {
+            webchat.init({
+              botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+              clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+              container: "#webchat",
+              lazySocket: true,
+              hideWidget: true,
+              useSessionStorage: true,
+              theme: "light",
+              themeName: "prism",
+              enableReset: true,
+              enableTranscriptDownload: false,
+              stylesheet: "https://cdn.botpress.cloud/webchat/v2.2/themes/default.css",
+              showPoweredBy: false,
+            });
+
+            webchat.sendEvent({ type: "show" });
+            console.log("✅ Botpress initialized");
+          } catch (err) {
+            console.error("❌ Botpress init error:", err);
+          }
+        } else {
+          console.warn("⚠️ window.botpressWebChat not available");
+        }
       };
 
       script.onerror = () => {
-        console.error("❌ Failed to load Botpress script.");
+        console.error("❌ Failed to load Botpress WebChat v2.2");
       };
 
       document.body.appendChild(script);
@@ -62,10 +85,7 @@ export default function Home() {
         body: JSON.stringify({ quoteItems }),
       });
 
-      if (!res.ok) {
-        console.error("❌ PDF generation failed. Response:", res.status, res.statusText);
-        return alert("❌ PDF generation failed.");
-      }
+      if (!res.ok) return alert("❌ PDF generation failed.");
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -75,8 +95,7 @@ export default function Home() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("❌ PDF generation error:", err);
-      alert("❌ PDF generation failed.");
+      console.error("❌ PDF download error:", err);
     }
   };
 
@@ -89,26 +108,20 @@ export default function Home() {
   };
 
   const handleTestAddProduct = async () => {
-    try {
-      await fetch("/api/add-to-quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productName: "Denon AVR-X1800H" }),
-      });
-    } catch (err) {
-      console.error("❌ Add product failed:", err);
-    }
+    await fetch("/api/add-to-quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productName: "Denon AVR-X1800H" }),
+    });
   };
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Chat */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="min-h-[500px] h-[60vh] md:h-[90vh] w-full" />
       </div>
 
-      {/* Quote */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
@@ -136,7 +149,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex flex-wrap gap-4 mt-6">
           <button
             onClick={handlePrint}
@@ -167,4 +179,3 @@ export default function Home() {
     </div>
   );
 }
-
