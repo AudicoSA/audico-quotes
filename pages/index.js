@@ -66,6 +66,24 @@ export default function Home() {
     };
   }, [quoteItems]);
 
+  const handleRemove = (indexToRemove) => {
+    setQuoteItems((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleEmailQuote = () => {
+    console.log("Email quote logic here");
+    alert("📧 Email feature coming soon.");
+  };
+
+  const handleAddToCart = () => {
+    console.log("Add to cart logic here");
+    alert("🛒 Add to cart feature coming soon.");
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen">
       {/* Chat Panel */}
@@ -80,17 +98,32 @@ export default function Home() {
         {quoteItems.length === 0 ? (
           <p className="text-gray-500">No products added yet.</p>
         ) : (
-          <ul className="space-y-4">
-            {quoteItems.map((item, index) => (
-              <li key={index} className="p-4 border rounded shadow">
-                <p className="font-bold">{item.name}</p>
-                <p>Price: {item.price}</p>
-                {item.image && (
-                  <img src={item.image} alt={item.name} className="w-32 mt-2" />
-                )}
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-4">
+              {quoteItems.map((item, index) => (
+                <li key={index} className="p-4 border rounded shadow relative">
+                  <button
+                    onClick={() => handleRemove(index)}
+                    className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                    title="Remove item"
+                  >
+                    ✕
+                  </button>
+                  <p className="font-bold">{item.name}</p>
+                  <p>Price: {item.price}</p>
+                  {item.image && (
+                    <img src={item.image} alt={item.name} className="w-32 mt-2" />
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex gap-4 mt-6">
+              <button onClick={handlePrint} className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Print</button>
+              <button onClick={handleEmailQuote} className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Email</button>
+              <button onClick={handleAddToCart} className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded">Add to Cart</button>
+            </div>
+          </>
         )}
       </div>
     </div>
