@@ -11,46 +11,23 @@ export default function Home() {
 
   useEffect(() => {
     const loadBotpress = () => {
-      if (document.getElementById("botpress-webchat-script")) return;
+      const existing = document.getElementById("botpress-webchat-script");
+      if (existing) return;
 
       const script = document.createElement("script");
       script.id = "botpress-webchat-script";
-      script.src = "https://cdn.botpress.cloud/webchat/v0/inject.js";
+      script.src = "https://cdn.botpress.cloud/webchat/v2.2/inject.js";
       script.async = true;
 
       script.onload = () => {
-        const webchat = (window as any).botpressWebChat;
-        console.log("✅ BotpressWebChat object:", webchat);
-
-        if (webchat) {
-          try {
-            webchat.init({
-              botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-              clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-              container: "#webchat",
-              lazySocket: true,
-              hideWidget: true,
-              theme: "light",
-              stylesheet: "https://cdn.botpress.cloud/webchat/v0/themes/default.css",
-              useSessionStorage: true,
-              showPoweredBy: false,
-              themeName: "prism",
-              enableReset: true,
-              enableTranscriptDownload: false,
-            });
-
-            webchat.sendEvent({ type: "show" });
-            console.log("✅ Botpress initialized and opened");
-          } catch (err) {
-            console.error("❌ Botpress init failed:", err);
-          }
-        } else {
-          console.warn("⚠️ BotpressWebChat not available on window.");
-        }
+        const configScript = document.createElement("script");
+        configScript.src = "https://files.bpcontent.cloud/2025/03/18/14/20250318141028-30WRMG85.js";
+        configScript.async = true;
+        document.body.appendChild(configScript);
       };
 
       script.onerror = () => {
-        console.error("❌ Failed to load Botpress WebChat script.");
+        console.error("❌ Failed to load Botpress script.");
       };
 
       document.body.appendChild(script);
@@ -190,3 +167,4 @@ export default function Home() {
     </div>
   );
 }
+
