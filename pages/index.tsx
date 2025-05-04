@@ -25,16 +25,25 @@ export default function Home() {
           configuration: {
             botName: "Audico Bot",
             botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
-            website: { title: "www.audicoonline.co.za", link: "https://www.audicoonline.co.za" },
-            email: { title: "support@audicoonline.co.za", link: "mailto:support@audicoonline.co.za" },
-            phone: { title: "010 020-2882", link: "tel:0100202882" },
+            website: {
+              title: "www.audicoonline.co.za",
+              link: "https://www.audicoonline.co.za"
+            },
+            email: {
+              title: "support@audicoonline.co.za",
+              link: "mailto:support@audicoonline.co.za"
+            },
+            phone: {
+              title: "010 020-2882",
+              link: "tel:0100202882"
+            },
             termsOfService: {
               title: "Terms",
-              link: "https://www.audicoonline.co.za/terms-and-conditions.html",
+              link: "https://www.audicoonline.co.za/terms-and-conditions.html"
             },
             privacyPolicy: {
               title: "Privacy",
-              link: "https://www.audicoonline.co.za/privacy-policy.html",
+              link: "https://www.audicoonline.co.za/privacy-policy.html"
             },
             color: "#5eb1ef",
             variant: "soft",
@@ -42,13 +51,46 @@ export default function Home() {
             fontFamily: "inter",
             radius: 1,
             showPoweredBy: false,
-            allowFileUpload: true,
-          },
+            allowFileUpload: true
+          }
+        });
+
+        (window as any).botpress.on('message', async (event: any) => {
+          const text = event?.payload?.text || '';
+          const match = text.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
+
+          if (match && match[1]) {
+            const productName = match[1];
+            console.log("🛎️ Triggered add to quote for:", productName);
+
+            try {
+              await fetch("/api/add-to-quote", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ productName }),
+              });
+            } catch (err) {
+              console.error("❌ Failed to send quote add request:", err);
+            }
+          }
         });
       }
     }, 100);
 
-    return () => clearInterval(interval);
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch("/api/quote-sync");
+        const data = await res.json();
+
+        if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
+          setQuoteItems((prev) => [...prev, data.product]);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(poll);
   }, [quoteItems]);
 
   const handleRemove = (index: number) => {
@@ -73,14 +115,8 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  const handleEmailQuote = () => {
-    alert("📧 Email feature coming soon.");
-  };
-
-  const handleAddToCart = () => {
-    alert("🛒 Add to cart feature coming soon.");
-  };
-
+  const handleEmailQuote = () => alert("📧 Email feature coming soon.");
+  const handleAddToCart = () => alert("🛒 Add to cart feature coming soon.");
   const handleTestAddProduct = async () => {
     await fetch("/api/add-to-quote", {
       method: "POST",
@@ -91,17 +127,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Left Side - Chat */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div
-          id="webchat"
-          className="min-h-screen w-full"
-          style={{ width: "100%", height: "100%", position: "relative" }}
-        />
+        <div id="webchat" className="min-h-screen w-full" style={{ width: "100%", height: "100%", position: "relative" }} />
       </div>
 
-      {/* Right Side - Quote */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
@@ -120,9 +150,7 @@ export default function Home() {
                   </button>
                   <p className="font-bold">{item.name}</p>
                   <p>Price: {item.price}</p>
-                  {item.image && (
-                    <img src={item.image} alt={item.name} className="w-32 mt-2" />
-                  )}
+                  {item.image && <img src={item.image} alt={item.name} className="w-32 mt-2" />}
                 </li>
               ))}
             </ul>
@@ -130,30 +158,10 @@ export default function Home() {
         </div>
 
         <div className="flex flex-wrap gap-4 mt-6">
-          <button
-            onClick={handlePrint}
-            className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium"
-          >
-            📄 PDF Download
-          </button>
-          <button
-            onClick={handleEmailQuote}
-            className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium"
-          >
-            📧 Email Quote
-          </button>
-          <button
-            onClick={handleAddToCart}
-            className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded shadow-sm text-sm font-medium"
-          >
-            🛒 Add to Cart
-          </button>
-          <button
-            onClick={handleTestAddProduct}
-            className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded shadow-sm text-sm font-medium"
-          >
-            🧪 Test Add Product
-          </button>
+          <button onClick={handlePrint} className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium">📄 PDF Download</button>
+          <button onClick={handleEmailQuote} className="bg-white border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded shadow-sm text-sm font-medium">📧 Email Quote</button>
+          <button onClick={handleAddToCart} className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded shadow-sm text-sm font-medium">🛒 Add to Cart</button>
+          <button onClick={handleTestAddProduct} className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded shadow-sm text-sm font-medium">🧪 Test Add Product</button>
         </div>
       </div>
     </div>
