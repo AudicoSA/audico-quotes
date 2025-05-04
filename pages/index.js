@@ -4,11 +4,12 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState([]);
 
   useEffect(() => {
-    const scriptId = "botpress-webchat-script";
+    const loadBotpress = () => {
+      const existingScript = document.getElementById("botpress-webchat-script");
+      if (existingScript) return;
 
-    if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
-      script.id = scriptId;
+      script.id = "botpress-webchat-script";
       script.src = "https://cdn.botpress.cloud/webchat/v0/inject.js";
       script.async = true;
       script.onload = () => {
@@ -56,7 +57,15 @@ export default function Home() {
           });
         }
       };
+
       document.body.appendChild(script);
+    };
+
+    // Load Botpress when DOM is ready
+    if (document.readyState === "complete") {
+      loadBotpress();
+    } else {
+      window.addEventListener("DOMContentLoaded", loadBotpress);
     }
 
     const poll = setInterval(async () => {
