@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -10,9 +9,7 @@ export default function Home() {
         clearInterval(interval);
 
         window.botpress.on("webchat:ready", () => {
-          if (window.innerWidth < 768) {
-            window.botpress.open();
-          }
+          window.botpress.open(); // ✅ Always open chat on all devices
         });
 
         window.botpress.init({
