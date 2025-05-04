@@ -19,28 +19,31 @@ export default function Home() {
       script.async = true;
 
       script.onload = () => {
+        console.log("✅ Botpress script loaded");
         const webchat = (window as any).botpressWebChat;
-        console.log("✅ BotpressWebChat loaded:", webchat);
 
         if (webchat) {
           try {
-            webchat.init({
-              botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
-              clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
-              container: "#webchat-container",  // Correct reference to the DOM node
-              lazySocket: true,
-              hideWidget: true,
-              useSessionStorage: true,
-              theme: "light",
-              themeName: "prism",
-              enableReset: true,
-              enableTranscriptDownload: false,
-              stylesheet: "https://cdn.botpress.cloud/webchat/v2.2/themes/default.css",
-              showPoweredBy: false,
-            });
+            console.log("🔧 Initializing Botpress...");
+            setTimeout(() => {
+              webchat.init({
+                botId: "39331f76-3b0d-434a-a550-bc4f60195d9e",
+                clientId: "4e2f894a-f686-4fe0-977a-4ddc533ab7dd",
+                container: "#webchat-container",
+                lazySocket: true,
+                hideWidget: false, // Make sure widget is visible
+                useSessionStorage: true,
+                theme: "light",
+                themeName: "prism",
+                enableReset: true,
+                enableTranscriptDownload: false,
+                stylesheet: "https://cdn.botpress.cloud/webchat/v2.2/themes/default.css",
+                showPoweredBy: false,
+              });
 
-            webchat.sendEvent({ type: "show" });
-            console.log("✅ Botpress initialized");
+              webchat.sendEvent({ type: "show" });
+              console.log("✅ Botpress initialized and shown");
+            }, 500); // Small delay to ensure DOM is ready
           } catch (err) {
             console.error("❌ Botpress init error:", err);
           }
@@ -119,7 +122,11 @@ export default function Home() {
     <div className="flex flex-col md:flex-row h-screen">
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div id="webchat-container" className="min-h-screen w-full" />
+        <div
+          id="webchat-container"
+          className="min-h-screen w-full"
+          style={{ position: "relative", height: "100%" }}
+        />
       </div>
 
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
@@ -179,4 +186,3 @@ export default function Home() {
     </div>
   );
 }
-
