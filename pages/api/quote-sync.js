@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
-    res.status(200).json(global.quoteSync || {});
-  }
-  
+  const result = global.quoteSync || {};
+  global.quoteSync = null; // ✅ clear after serving
+  res.status(200).json(result);
+}
