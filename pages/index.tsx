@@ -75,6 +75,12 @@ export default function Home() {
       if (match) {
         const productName = match[1];
         console.log("✅ Caught quote trigger:", productName);
+
+        const quoteId =
+          sessionStorage.getItem("quoteId") ||
+          localStorage.getItem("quoteId") ||
+          crypto.randomUUID();
+
         fetch("/api/add-to-quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -129,13 +135,33 @@ export default function Home() {
 
   const handleEmailQuote = () => alert("📧 Email feature coming soon.");
   const handleAddToCart = () => alert("🛒 Add to cart feature coming soon.");
+
   const handleTestAddProduct = async () => {
-    const quoteId = sessionStorage.getItem("quoteId") || localStorage.getItem("quoteId") || "fallback-id";
-    await fetch("/api/add-to-quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: "Denon AVR-X1800H", quoteId }),
-    });
+    const quoteId =
+      sessionStorage.getItem("quoteId") ||
+      localStorage.getItem("quoteId") ||
+      crypto.randomUUID();
+
+    try {
+      const res = await fetch("/api/add-to-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName: "Denon AVR-X1800H", quoteId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error("❌ Test add failed:", json.message);
+        alert("❌ Test add failed: " + json.message);
+      } else {
+        console.log("✅ Test product added:", json);
+        alert("✅ Denon AVR-X1800H added to quote successfully.");
+      }
+    } catch (err) {
+      console.error("❌ Test add error:", err);
+      alert("❌ Error adding test product.");
+    }
   };
 
   return (
