@@ -12,11 +12,24 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    // ✅ Use sessionStorage to isolate quote per browser tab
-    let quoteId = sessionStorage.getItem("quoteId");
+    // ✅ Generate a safe quoteId using sessionStorage, fallback to localStorage, then memory
+    let quoteId = undefined;
+    try {
+      quoteId = sessionStorage.getItem("quoteId") || undefined;
+    } catch (err) {
+      console.warn("⚠️ sessionStorage not available", err);
+    }
+
     if (!quoteId) {
-      quoteId = crypto.randomUUID();
-      sessionStorage.setItem("quoteId", quoteId);
+      try {
+        quoteId = localStorage.getItem("quoteId") || undefined;
+        if (!quoteId) {
+          quoteId = crypto.randomUUID();
+          localStorage.setItem("quoteId", quoteId);
+        }
+      } catch (err) {
+        quoteId = crypto.randomUUID();
+      }
     }
     console.log("★ Quote ID for this tab:", quoteId);
 
@@ -117,7 +130,7 @@ export default function Home() {
   const handleEmailQuote = () => alert("📧 Email feature coming soon.");
   const handleAddToCart = () => alert("🛒 Add to cart feature coming soon.");
   const handleTestAddProduct = async () => {
-    const quoteId = sessionStorage.getItem("quoteId") || "fallback-id";
+    const quoteId = sessionStorage.getItem("quoteId") || localStorage.getItem("quoteId") || "fallback-id";
     await fetch("/api/add-to-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
