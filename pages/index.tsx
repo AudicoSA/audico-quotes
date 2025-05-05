@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+// Type for quote items
 type QuoteItem = {
   name: string;
   price: string;
@@ -10,13 +11,18 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    // Assign a persistent quoteId for the session
-    if (typeof window !== "undefined" && !localStorage.getItem("quoteId")) {
-      localStorage.setItem("quoteId", crypto.randomUUID());
+    // Ensure each session gets its own quote ID
+    let quoteId = localStorage.getItem("quoteId");
+    if (!quoteId) {
+      quoteId = crypto.randomUUID();
+      localStorage.setItem("quoteId", quoteId);
+      console.log("🆕 Generated quoteId:", quoteId);
+    } else {
+      console.log("📌 Existing quoteId:", quoteId);
     }
 
     const interval = setInterval(() => {
-      if ((window as any).botpress?.init) {
+      if (typeof window !== "undefined" && (window as any).botpress?.init) {
         clearInterval(interval);
 
         (window as any).botpress.on("webchat:ready", () => {
@@ -69,8 +75,8 @@ export default function Home() {
       const match = raw.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
       if (match) {
         const productName = match[1];
-        const quoteId = localStorage.getItem("quoteId");
         console.log("✅ Caught quote trigger:", productName);
+
         fetch("/api/add-to-quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -84,9 +90,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const quoteId = localStorage.getItem("quoteId");
     const poll = setInterval(async () => {
       try {
-        const quoteId = localStorage.getItem("quoteId");
         const res = await fetch(`/api/quote-sync?quoteId=${quoteId}`);
         const data = await res.json();
 
