@@ -1,6 +1,7 @@
+// pages/index.tsx
 import { useEffect, useState } from "react";
 
-// Type for quote items
+// Quote item shape
 type QuoteItem = {
   name: string;
   price: string;
@@ -11,16 +12,15 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
-    // Ensure each session gets its own quote ID
-    let quoteId = localStorage.getItem("quoteId");
+    // ✅ Use sessionStorage to isolate quote per browser tab
+    let quoteId = sessionStorage.getItem("quoteId");
     if (!quoteId) {
       quoteId = crypto.randomUUID();
-      localStorage.setItem("quoteId", quoteId);
-      console.log("🆕 Generated quoteId:", quoteId);
-    } else {
-      console.log("📌 Existing quoteId:", quoteId);
+      sessionStorage.setItem("quoteId", quoteId);
     }
+    console.log("★ Quote ID for this tab:", quoteId);
 
+    // ✅ Wait for Botpress WebChat to be ready
     const interval = setInterval(() => {
       if (typeof window !== "undefined" && (window as any).botpress?.init) {
         clearInterval(interval);
@@ -36,26 +36,11 @@ export default function Home() {
           configuration: {
             botName: "Audico Bot",
             botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
-            website: {
-              title: "www.audicoonline.co.za",
-              link: "https://www.audicoonline.co.za",
-            },
-            email: {
-              title: "support@audicoonline.co.za",
-              link: "mailto:support@audicoonline.co.za",
-            },
-            phone: {
-              title: "010 020-2882",
-              link: "tel:0100202882",
-            },
-            termsOfService: {
-              title: "Terms",
-              link: "https://www.audicoonline.co.za/terms-and-conditions.html",
-            },
-            privacyPolicy: {
-              title: "Privacy",
-              link: "https://www.audicoonline.co.za/privacy-policy.html",
-            },
+            website: { title: "www.audicoonline.co.za", link: "https://www.audicoonline.co.za" },
+            email: { title: "support@audicoonline.co.za", link: "mailto:support@audicoonline.co.za" },
+            phone: { title: "010 020-2882", link: "tel:0100202882" },
+            termsOfService: { title: "Terms", link: "https://www.audicoonline.co.za/terms-and-conditions.html" },
+            privacyPolicy: { title: "Privacy", link: "https://www.audicoonline.co.za/privacy-policy.html" },
             color: "#5eb1ef",
             variant: "soft",
             themeMode: "light",
@@ -68,15 +53,15 @@ export default function Home() {
       }
     }, 100);
 
+    // ✅ Listen for quote trigger messages
     const handlePostMessage = (event: MessageEvent) => {
       const raw = typeof event.data === "string" ? event.data : event.data?.payload?.text;
       if (!raw || typeof raw !== "string") return;
 
-      const match = raw.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
+      const match = raw.match(/QUOTE_TRIGGER:ADD\[\"(.+?)\"\]/);
       if (match) {
         const productName = match[1];
         console.log("✅ Caught quote trigger:", productName);
-
         fetch("/api/add-to-quote", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -89,11 +74,11 @@ export default function Home() {
     return () => window.removeEventListener("message", handlePostMessage);
   }, []);
 
+  // ✅ Poll for quote updates every 5s
   useEffect(() => {
-    const quoteId = localStorage.getItem("quoteId");
     const poll = setInterval(async () => {
       try {
-        const res = await fetch(`/api/quote-sync?quoteId=${quoteId}`);
+        const res = await fetch("/api/quote-sync");
         const data = await res.json();
 
         if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
@@ -132,7 +117,7 @@ export default function Home() {
   const handleEmailQuote = () => alert("📧 Email feature coming soon.");
   const handleAddToCart = () => alert("🛒 Add to cart feature coming soon.");
   const handleTestAddProduct = async () => {
-    const quoteId = localStorage.getItem("quoteId");
+    const quoteId = sessionStorage.getItem("quoteId") || "fallback-id";
     await fetch("/api/add-to-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -182,3 +167,4 @@ export default function Home() {
     </div>
   );
 }
+
