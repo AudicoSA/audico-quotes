@@ -1,5 +1,16 @@
+// pages/api/quote-sync.js
+
+import { quoteMap } from './add-to-quote';
+
 export default async function handler(req, res) {
-  const result = global.quoteSync || {};
-  global.quoteSync = null; // ✅ clear after serving
-  res.status(200).json(result);
+  const quoteId = req.query.quoteId;
+
+  if (!quoteId || !quoteMap.has(quoteId)) {
+    return res.status(200).json({ product: null });
+  }
+
+  const userQuote = quoteMap.get(quoteId);
+  const lastProduct = userQuote[userQuote.length - 1];
+
+  res.status(200).json({ product: lastProduct });
 }
