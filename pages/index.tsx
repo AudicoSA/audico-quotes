@@ -10,8 +10,13 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<QuoteItem[]>([]);
 
   useEffect(() => {
+    // Assign a persistent quoteId for the session
+    if (typeof window !== "undefined" && !localStorage.getItem("quoteId")) {
+      localStorage.setItem("quoteId", crypto.randomUUID());
+    }
+
     const interval = setInterval(() => {
-      if (typeof window !== "undefined" && (window as any).botpress?.init) {
+      if ((window as any).botpress?.init) {
         clearInterval(interval);
 
         (window as any).botpress.on("webchat:ready", () => {
@@ -54,33 +59,35 @@ export default function Home() {
             allowFileUpload: true,
           },
         });
-
-        // ✅ This listens to messages from the embedded Botpress chat
-        (window as any).botpress.on("message", async (event: any) => {
-          const text = event?.payload?.text || "";
-          const match = text.match(/QUOTE_TRIGGER:ADD\[\"(.+?)\"\]/);
-
-          if (match && match[1]) {
-            const productName = match[1];
-            console.log("🔔 Botpress triggered product:", productName);
-
-            await fetch("/api/add-to-quote", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ productName }),
-            });
-          }
-        });
       }
     }, 100);
 
-    return () => clearInterval(interval);
+    const handlePostMessage = (event: MessageEvent) => {
+      const raw = typeof event.data === "string" ? event.data : event.data?.payload?.text;
+      if (!raw || typeof raw !== "string") return;
+
+      const match = raw.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
+      if (match) {
+        const productName = match[1];
+        const quoteId = localStorage.getItem("quoteId");
+        console.log("✅ Caught quote trigger:", productName);
+        fetch("/api/add-to-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productName, quoteId }),
+        }).catch((err) => console.error("❌ Add-to-quote failed:", err));
+      }
+    };
+
+    window.addEventListener("message", handlePostMessage);
+    return () => window.removeEventListener("message", handlePostMessage);
   }, []);
 
   useEffect(() => {
     const poll = setInterval(async () => {
       try {
-        const res = await fetch("/api/quote-sync");
+        const quoteId = localStorage.getItem("quoteId");
+        const res = await fetch(`/api/quote-sync?quoteId=${quoteId}`);
         const data = await res.json();
 
         if (data?.product && !quoteItems.find((i) => i.name === data.product.name)) {
@@ -119,10 +126,11 @@ export default function Home() {
   const handleEmailQuote = () => alert("📧 Email feature coming soon.");
   const handleAddToCart = () => alert("🛒 Add to cart feature coming soon.");
   const handleTestAddProduct = async () => {
+    const quoteId = localStorage.getItem("quoteId");
     await fetch("/api/add-to-quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productName: "Denon AVR-X1800H" }),
+      body: JSON.stringify({ productName: "Denon AVR-X1800H", quoteId }),
     });
   };
 
@@ -130,11 +138,7 @@ export default function Home() {
     <div className="flex flex-col md:flex-row h-screen">
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div
-          id="webchat"
-          className="min-h-screen w-full"
-          style={{ width: "100%", height: "100%", position: "relative" }}
-        />
+        <div id="webchat" className="min-h-screen w-full" style={{ width: "100%", height: "100%", position: "relative" }} />
       </div>
 
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
