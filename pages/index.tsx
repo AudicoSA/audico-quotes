@@ -54,28 +54,27 @@ export default function Home() {
             allowFileUpload: true,
           },
         });
+
+        // ✅ This listens to messages from the embedded Botpress chat
+        (window as any).botpress.on("message", async (event: any) => {
+          const text = event?.payload?.text || "";
+          const match = text.match(/QUOTE_TRIGGER:ADD\[\"(.+?)\"\]/);
+
+          if (match && match[1]) {
+            const productName = match[1];
+            console.log("🔔 Botpress triggered product:", productName);
+
+            await fetch("/api/add-to-quote", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ productName }),
+            });
+          }
+        });
       }
     }, 100);
 
-    // Listen for messages from iframe or chat
-    const handlePostMessage = (event: MessageEvent) => {
-      const raw = typeof event.data === "string" ? event.data : event.data?.payload?.text;
-      if (!raw || typeof raw !== "string") return;
-
-      const match = raw.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
-      if (match) {
-        const productName = match[1];
-        console.log("✅ Caught quote trigger:", productName);
-        fetch("/api/add-to-quote", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productName }),
-        }).catch((err) => console.error("❌ Add-to-quote failed:", err));
-      }
-    };
-
-    window.addEventListener("message", handlePostMessage);
-    return () => window.removeEventListener("message", handlePostMessage);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -131,7 +130,11 @@ export default function Home() {
     <div className="flex flex-col md:flex-row h-screen">
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
-        <div id="webchat" className="min-h-screen w-full" style={{ width: "100%", height: "100%", position: "relative" }} />
+        <div
+          id="webchat"
+          className="min-h-screen w-full"
+          style={{ width: "100%", height: "100%", position: "relative" }}
+        />
       </div>
 
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
