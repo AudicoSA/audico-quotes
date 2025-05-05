@@ -27,23 +27,23 @@ export default function Home() {
             botDescription: "Hi there! 👋 I'm your dedicated AV Consultant from Audico.",
             website: {
               title: "www.audicoonline.co.za",
-              link: "https://www.audicoonline.co.za"
+              link: "https://www.audicoonline.co.za",
             },
             email: {
               title: "support@audicoonline.co.za",
-              link: "mailto:support@audicoonline.co.za"
+              link: "mailto:support@audicoonline.co.za",
             },
             phone: {
               title: "010 020-2882",
-              link: "tel:0100202882"
+              link: "tel:0100202882",
             },
             termsOfService: {
               title: "Terms",
-              link: "https://www.audicoonline.co.za/terms-and-conditions.html"
+              link: "https://www.audicoonline.co.za/terms-and-conditions.html",
             },
             privacyPolicy: {
               title: "Privacy",
-              link: "https://www.audicoonline.co.za/privacy-policy.html"
+              link: "https://www.audicoonline.co.za/privacy-policy.html",
             },
             color: "#5eb1ef",
             variant: "soft",
@@ -51,28 +51,8 @@ export default function Home() {
             fontFamily: "inter",
             radius: 1,
             showPoweredBy: false,
-            allowFileUpload: true
-          }
-        });
-
-        (window as any).botpress.on('message', async (event: any) => {
-          const text = event?.payload?.text || '';
-          const match = text.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/);
-
-          if (match && match[1]) {
-            const productName = match[1];
-            console.log("🛎️ Triggered add to quote for:", productName);
-
-            try {
-              await fetch("/api/add-to-quote", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productName }),
-              });
-            } catch (err) {
-              console.error("❌ Failed to send quote add request:", err);
-            }
-          }
+            allowFileUpload: true,
+          },
         });
       }
     }, 100);
@@ -89,6 +69,30 @@ export default function Home() {
         console.error("Polling error:", err);
       }
     }, 5000);
+
+    // ✅ Listen for QUOTE_TRIGGER sent via postMessage
+    window.addEventListener("message", async (event) => {
+      const text = event?.data?.payload?.text || event.data;
+
+      const match = typeof text === "string"
+        ? text.match(/QUOTE_TRIGGER:ADD\["(.+?)"\]/)
+        : null;
+
+      if (match && match[1]) {
+        const productName = match[1];
+        console.log("🛎️ QUOTE_TRIGGER detected:", productName);
+
+        try {
+          await fetch("/api/add-to-quote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productName }),
+          });
+        } catch (err) {
+          console.error("❌ Failed to send quote add request:", err);
+        }
+      }
+    });
 
     return () => clearInterval(poll);
   }, [quoteItems]);
@@ -127,11 +131,13 @@ export default function Home() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen">
+      {/* Left - Chat */}
       <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200">
         <h2 className="text-xl font-semibold mb-4">Audico Chat</h2>
         <div id="webchat" className="min-h-screen w-full" style={{ width: "100%", height: "100%", position: "relative" }} />
       </div>
 
+      {/* Right - Live Quote */}
       <div className="w-full md:w-1/2 p-6 flex flex-col justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-4">Live Quote</h2>
