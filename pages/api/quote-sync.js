@@ -1,20 +1,17 @@
-// pages/api/quote-sync.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import { quoteStore } from './add-to-quote';
+// pages/api/quote-sync.js
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { quoteId } = req.query;
+import { quoteMap } from './add-to-quote';
 
-  if (!quoteId || typeof quoteId !== 'string') {
-    return res.status(400).json({ error: 'Missing quoteId' });
+export default function handler(req, res) {
+  const quoteId = req.query.quoteId;
+
+  if (!quoteId || !quoteMap.has(quoteId)) {
+    return res.status(200).json({ product: null });
   }
 
-  const items = quoteStore[quoteId] || [];
+  const userQuote = quoteMap.get(quoteId);
+  const lastProduct = userQuote[userQuote.length - 1];
 
-  if (items.length > 0) {
-    const product = items.shift(); // remove from queue after sending once
-    return res.status(200).json({ product });
-  }
-
-  return res.status(204).end();
+  res.status(200).json({ product: lastProduct });
 }
+
