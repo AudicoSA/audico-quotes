@@ -215,7 +215,8 @@ export const SUPPLIER_PRICE_RULES: Record<string, SupplierPriceRule> = {
     supplier_name: 'JBL',
     price_type: 'retail',
     price_rules: {
-      includes_vat: true
+      includes_vat: true,
+      description: 'Retail prices including VAT'
     },
     expected_brand: 'JBL'
   }

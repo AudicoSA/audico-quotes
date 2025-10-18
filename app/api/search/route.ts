@@ -90,8 +90,8 @@ export async function POST(req: NextRequest) {
       model: product.model,
       brand: product.brand,
       category: product.category_name,
-      price: parseFloat(product.retail_price),
-      cost: parseFloat(product.cost_price),
+      price: parseFloat(String(product.retail_price || 0)),
+      cost: parseFloat(String(product.cost_price || 0)),
       stock: {
         total: product.total_stock,
         jhb: product.stock_jhb,
@@ -104,9 +104,9 @@ export async function POST(req: NextRequest) {
       active: product.active,
       // Include search scores for debugging/tuning
       scores: {
-        hybrid: parseFloat(product.hybrid_score || 0),
-        vector: parseFloat(product.vec_score || 0),
-        bm25: parseFloat(product.bm25_score || 0),
+        hybrid: parseFloat(String(product.hybrid_score || 0)),
+        vector: parseFloat(String(product.vec_score || 0)),
+        bm25: parseFloat(String(product.bm25_score || 0)),
       },
     }));
 

@@ -4,13 +4,23 @@ import { useState } from 'react';
 import { Upload, CheckCircle, Settings, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
+interface SampleProduct {
+  product_name: string;
+  sku: string;
+  brand?: string;
+  retail_price?: number;
+}
+
 interface TrainingSession {
   filename: string;
   supplierDetected: string;
   priceTypeDetected: 'cost' | 'retail' | 'selling';
-  sampleProducts: any[];
+  sampleProducts: SampleProduct[];
   columnMappings: Record<string, string>;
-  priceRules: Record<string, any>;
+  priceRules: Record<string, number | string | boolean>;
+  supplier_detected: string;
+  price_type_detected: 'cost' | 'retail' | 'selling';
+  price_rules?: { discount_from_retail?: number };
 }
 
 export default function PricelistSetupPage() {
@@ -44,7 +54,7 @@ export default function PricelistSetupPage() {
       const res = await fetch('/api/admin/pricelist/config?action=list');
       const data = await res.json();
       if (data.success) {
-        setTrainedSuppliers(data.profiles.map((p: any) => p.supplier_name));
+        setTrainedSuppliers(data.profiles.map((p: { supplier_name: string }) => p.supplier_name));
       }
     } catch (err) {
       console.error('Failed to load profiles:', err);
@@ -85,8 +95,8 @@ export default function PricelistSetupPage() {
       }
 
       setCurrentSession(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setLoading(false);
     }
@@ -98,7 +108,7 @@ export default function PricelistSetupPage() {
     setLoading(true);
     try {
       // Build price rules based on manual inputs
-      const priceRules: Record<string, any> = {
+      const priceRules: Record<string, number | string | boolean> = {
         includes_vat: true,
       };
 
@@ -137,8 +147,8 @@ export default function PricelistSetupPage() {
       setCurrentSession(null);
       setManualSupplier('');
       setDiscountPercent('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {
       setLoading(false);
     }
@@ -296,7 +306,7 @@ export default function PricelistSetupPage() {
                   </label>
                   <select
                     value={manualPriceType}
-                    onChange={(e) => setManualPriceType(e.target.value as any)}
+                    onChange={(e) => setManualPriceType(e.target.value as 'cost' | 'retail' | 'selling')}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="retail">Retail</option>

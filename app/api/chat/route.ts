@@ -114,7 +114,7 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
     let completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: conversationMessages,
-      tools: chatTools as OpenAITool[],
+      tools: chatTools as unknown as OpenAITool[],
       tool_choice: wantsProducts
         ? { type: "function", function: { name: "search_products" } }
         : 'auto',
@@ -131,6 +131,16 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
       // Execute all tool calls in parallel
       const toolResults = await Promise.all(
         assistantMessage.tool_calls.map(async (toolCall) => {
+          // Type guard to ensure toolCall has function property
+          if (toolCall.type !== 'function' || !toolCall.function) {
+            return {
+              tool_call_id: toolCall.id,
+              role: 'tool' as const,
+              name: 'unknown',
+              content: JSON.stringify({ error: 'Invalid tool call type' }),
+            };
+          }
+
           const result = await handleToolCallServerSide({
             name: toolCall.function.name,
             arguments: JSON.parse(toolCall.function.arguments),
@@ -155,17 +165,17 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
         role: 'assistant',
         content: assistantMessage.content || '',
         tool_calls: assistantMessage.tool_calls,
-      } as OpenAIMessage);
+      } as unknown as { role: 'user' | 'assistant' | 'system'; content: string });
 
       toolResults.forEach((result) => {
-        conversationMessages.push(result as OpenAIMessage);
+        conversationMessages.push(result as unknown as { role: 'user' | 'assistant' | 'system'; content: string });
       });
 
       // Get next response from GPT
       completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: conversationMessages,
-        tools: chatTools as OpenAITool[],
+        tools: chatTools as unknown as OpenAITool[],
         tool_choice: 'auto',
         temperature: 0.7,
       });
@@ -174,14 +184,14 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
     }
 
     // GUARDRAILS: Validate and clean AI response
-    assistantMessage = validateAndCleanResponse(assistantMessage, toolCallResults, messages);
+    assistantMessage = validateAndCleanResponse(assistantMessage as unknown as OpenAIMessage, toolCallResults, messages) as typeof assistantMessage;
 
     // GUARDRAIL: Warn if AI mentions products but didn't search
     const mentionsProducts = detectProductMentions(assistantMessage.content);
     const performedSearch = toolCallResults.some(tcr => tcr.name === 'search_products');
     if (mentionsProducts && !performedSearch) {
       console.warn('[GUARDRAIL WARNING] AI mentioned products but did not search:', {
-        content: assistantMessage.content.slice(0, 100),
+        content: assistantMessage.content?.slice(0, 100) || '',
         detectedCategories: mentionsProducts,
       });
     }
@@ -473,8 +483,8 @@ async function searchProductsServerSide(args: SearchArguments): Promise<SearchRe
         model: product.model,
         brand: product.brand,
         category: product.category_name,
-        price: parseFloat(product.retail_price),
-        cost: parseFloat(product.cost_price),
+        price: parseFloat(String(product.retail_price || 0)),
+        cost: parseFloat(String(product.cost_price || 0)),
         image: imageUrl, // Single image URL for UI
         images: product.images || [], // Full array for reference
         stock: {
@@ -487,9 +497,9 @@ async function searchProductsServerSide(args: SearchArguments): Promise<SearchRe
         supplier_id: product.supplier_id,
         active: product.active,
         scores: {
-          hybrid: parseFloat(product.hybrid_score || 0),
-          vector: parseFloat(product.vec_score || 0),
-          bm25: parseFloat(product.bm25_score || 0),
+          hybrid: parseFloat(String(product.hybrid_score || 0)),
+          vector: parseFloat(String(product.vec_score || 0)),
+          bm25: parseFloat(String(product.bm25_score || 0)),
         },
       };
     });
@@ -631,7 +641,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
 
   // GUARDRAIL 5: Prevent AI from lying about adding products to quote
   // AI MUST NOT say "added to quote" unless it actually called add_to_quote tool
-  const hasAddToQuoteTool = toolCallResults.some(r => r.tool_name === 'add_to_quote');
+  const hasAddToQuoteTool = toolCallResults.some(r => r.name === 'add_to_quote');
   const claimsAdded = /(?:added|successfully added|has been added|i've added|now added).*(?:to|your) quote/i.test(content);
 
   if (claimsAdded && !hasAddToQuoteTool) {

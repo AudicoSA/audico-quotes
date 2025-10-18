@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import * as XLSX from 'xlsx';
 import { parseFilename } from '@/lib/filename-parser';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -55,19 +49,28 @@ export async function POST(req: NextRequest) {
       { success: false, error: `Unsupported file type: ${fileType}` },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Training error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
+interface FileInfo {
+  supplier: string;
+  normalizedSupplier: string;
+  priceTypeHint?: 'cost' | 'retail' | 'selling';
+  excludesVat?: boolean;
+  month?: string;
+  year?: number;
+}
+
 /**
  * Train from Excel file - extract samples and analyze structure
  */
-async function trainFromExcel(file: File, filename: string, fileInfo: any) {
+async function trainFromExcel(file: File, filename: string, fileInfo: FileInfo) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -77,7 +80,7 @@ async function trainFromExcel(file: File, filename: string, fileInfo: any) {
     // Get first sheet for training
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
 
     if (jsonData.length === 0) {
       throw new Error('Empty spreadsheet');
@@ -103,16 +106,33 @@ async function trainFromExcel(file: File, filename: string, fileInfo: any) {
       total_rows: jsonData.length,
       sheets_available: workbook.SheetNames,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Excel training error:', error);
     throw error;
   }
 }
 
+interface Product {
+  product_name: string;
+  sku: string;
+  brand: string | null;
+  retail_price: number | null;
+  cost_price: number | null;
+  total_stock: number;
+}
+
+interface AnalysisResult {
+  supplier_name: string;
+  price_type: 'cost' | 'retail' | 'selling';
+  column_mappings: Record<string, string>;
+  price_rules: Record<string, boolean | number | string>;
+  products: Product[];
+}
+
 /**
  * Use GPT-4 to analyze spreadsheet structure and detect patterns
  */
-async function analyzeStructure(sampleRows: any[], filename: string, fileInfo: any) {
+async function analyzeStructure(sampleRows: Record<string, unknown>[], filename: string, fileInfo: FileInfo): Promise<AnalysisResult> {
   const prompt = `
 Analyze this pricelist sample and detect its structure.
 

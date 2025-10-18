@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLearningStats } from '@/lib/learning-algorithm';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const stats = await getLearningStats();
 
@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
       stats,
       generated_at: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Admin Learning] Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to get learning stats' },
+      { error: error instanceof Error ? error.message : 'Failed to get learning stats' },
       { status: 500 }
     );
   }

@@ -121,10 +121,10 @@ export async function POST(req: NextRequest) {
       { success: false, error: `Unsupported file type: ${fileType}` },
       { status: 400 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
@@ -145,13 +145,25 @@ async function processExcel(file: File, filename: string) {
 
     console.log(`📊 Found ${workbook.SheetNames.length} sheet(s): ${workbook.SheetNames.join(', ')}`);
 
-    let allProducts: any[] = [];
-    const sheetResults: any[] = [];
+    interface ExtractedProduct {
+      product_name: string;
+      sku: string;
+      brand: string | null;
+      cost_price: number | null;
+      retail_price: number | null;
+      total_stock: number;
+      stock_jhb?: number;
+      stock_cpt?: number;
+      stock_dbn?: number;
+    }
+
+    let allProducts: ExtractedProduct[] = [];
+    const sheetResults: { sheet: string; rows: number; products: number }[] = [];
 
     // Process each sheet independently
     for (const sheetName of workbook.SheetNames) {
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
 
       if (jsonData.length === 0) {
         console.log(`⏭️  Skipping empty sheet: ${sheetName}`);
@@ -187,7 +199,7 @@ async function processExcel(file: File, filename: string) {
       sheets_processed: sheetResults,
       message: `Excel file processed successfully (${workbook.SheetNames.length} sheet${workbook.SheetNames.length > 1 ? 's' : ''})`,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Excel processing error:', error);
     throw error;
   }
@@ -209,10 +221,22 @@ async function processPDF(file: File, filename: string) {
   );
 }
 
+interface ExtractedProduct {
+  product_name: string;
+  sku: string;
+  brand: string | null;
+  cost_price: number | null;
+  retail_price: number | null;
+  total_stock: number;
+  stock_jhb?: number;
+  stock_cpt?: number;
+  stock_dbn?: number;
+}
+
 /**
  * Use GPT-4 to analyze Excel data and extract products
  */
-async function extractProductsFromTable(data: any[], filename: string, sheetName?: string) {
+async function extractProductsFromTable(data: Record<string, unknown>[], filename: string, sheetName?: string): Promise<ExtractedProduct[]> {
   const sampleRows = data.slice(0, 10); // Send sample for analysis
 
   const prompt = `
@@ -281,10 +305,22 @@ Extract EVERY row that looks like a product. Return ONLY valid JSON.
   return result.products || [];
 }
 
+interface ExtractedProductForSync {
+  product_name: string;
+  sku: string;
+  brand: string | null;
+  cost_price: number | null;
+  retail_price: number | null;
+  total_stock: number;
+  stock_jhb?: number;
+  stock_cpt?: number;
+  stock_dbn?: number;
+}
+
 /**
  * Sync extracted products to Supabase
  */
-async function syncToDatabase(products: any[], filename: string) {
+async function syncToDatabase(products: ExtractedProductForSync[], filename: string) {
   let saved = 0,
     updated = 0,
     skipped = 0;
@@ -345,8 +381,8 @@ async function syncToDatabase(products: any[], filename: string) {
           updated++;
         }
       }
-    } catch (error: any) {
-      warnings.push(`Error processing ${product.sku}: ${error.message}`);
+    } catch (error) {
+      warnings.push(`Error processing ${product.sku}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       skipped++;
     }
   }

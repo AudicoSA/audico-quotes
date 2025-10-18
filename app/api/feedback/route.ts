@@ -35,19 +35,29 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Feedback API] Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
+interface MessageFeedbackData {
+  conversation_id: string;
+  message_index: number;
+  message_content: string;
+  feedback_type: string;
+  feedback_reason?: string;
+  chat_type: string;
+  user_session: string;
+}
+
 /**
  * Handle thumbs up/down on AI messages
  */
-async function handleMessageFeedback(data: any) {
+async function handleMessageFeedback(data: MessageFeedbackData) {
   const {
     conversation_id,
     message_index,
@@ -78,10 +88,24 @@ async function handleMessageFeedback(data: any) {
   return NextResponse.json({ success: true });
 }
 
+interface ProductActionData {
+  conversation_id: string;
+  message_index: number;
+  product_id: string;
+  product_name: string;
+  product_sku: string;
+  product_price: number;
+  action_type: string;
+  chat_type: string;
+  search_query?: string;
+  position_in_list?: number;
+  user_session: string;
+}
+
 /**
  * Handle product interactions (shown, clicked, added, removed, ignored)
  */
-async function handleProductAction(data: any) {
+async function handleProductAction(data: ProductActionData) {
   const {
     conversation_id,
     message_index,
@@ -120,10 +144,24 @@ async function handleProductAction(data: any) {
   return NextResponse.json({ success: true });
 }
 
+interface SearchQualityData {
+  conversation_id: string;
+  message_index: number;
+  search_query: string;
+  chat_type: string;
+  products_count: number;
+  products_clicked: number;
+  products_added: number;
+  user_rephrased: boolean;
+  user_complained: boolean;
+  response_time_ms: number;
+  user_session: string;
+}
+
 /**
  * Handle search quality metrics
  */
-async function handleSearchQuality(data: any) {
+async function handleSearchQuality(data: SearchQualityData) {
   const {
     conversation_id,
     message_index,
@@ -162,10 +200,21 @@ async function handleSearchQuality(data: any) {
   return NextResponse.json({ success: true });
 }
 
+interface ConversationCompleteData {
+  conversation_id: string;
+  chat_type: string;
+  total_messages: number;
+  products_added_count: number;
+  quote_total_value: number;
+  user_satisfaction?: string;
+  generated_quote: boolean;
+  user_session: string;
+}
+
 /**
  * Handle conversation completion
  */
-async function handleConversationComplete(data: any) {
+async function handleConversationComplete(data: ConversationCompleteData) {
   const {
     conversation_id,
     chat_type,
@@ -225,10 +274,10 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Feedback API] GET Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }

@@ -99,9 +99,8 @@ export default function ChatInterface({ chatType, onAddProduct, onSwitchTab, cur
     if (!messageContent.trim() || isLoading) return;
 
     // Only show user message in UI if it's not a system trigger
-    let userMessage: Message | null = null;
     if (!isAutoTrigger) {
-      userMessage = {
+      const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
         content: input,
@@ -437,7 +436,7 @@ export default function ChatInterface({ chatType, onAddProduct, onSwitchTab, cur
           </button>
 
           <button
-            onClick={sendMessage}
+            onClick={() => sendMessage()}
             disabled={!input.trim() || isLoading}
             className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 text-white rounded-xl hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
           >

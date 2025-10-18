@@ -116,21 +116,24 @@ export function applyLearningBoosts(
   // Apply boosts to product scores
   const boostedProducts = products.map(product => {
     const boost = boosts.get(product.id);
-    const originalScore = product.score || 1.0;
+    const originalScore = product.scores?.hybrid || 1.0;
     const multiplier = boost?.boost_multiplier || 1.0;
     const boostedScore = originalScore * multiplier;
 
     return {
       ...product,
-      original_score: originalScore,
+      scores: {
+        hybrid: boostedScore,
+        vector: product.scores?.vector || 0,
+        bm25: product.scores?.bm25 || 0,
+      },
       learning_boost: multiplier,
       boost_reason: boost?.reason || 'no_data',
-      score: boostedScore,
     };
   });
 
   // Re-sort by boosted score
-  boostedProducts.sort((a, b) => (b.score || 0) - (a.score || 0));
+  boostedProducts.sort((a, b) => (b.scores?.hybrid || 0) - (a.scores?.hybrid || 0));
 
   return boostedProducts;
 }

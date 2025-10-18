@@ -22,6 +22,7 @@ export interface OpenAIMessage {
   tool_calls?: OpenAIToolCall[];
   tool_call_id?: string;
   name?: string;
+  refusal: string | null;
 }
 
 export interface OpenAIChatCompletion {
@@ -183,9 +184,9 @@ export function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
   if (isErrorWithMessage(maybeError)) return maybeError;
 
   try {
-    return new Error(JSON.stringify(maybeError));
+    return new Error(JSON.stringify(maybeError)) as unknown as ErrorWithMessage;
   } catch {
-    return new Error(String(maybeError));
+    return new Error(String(maybeError)) as unknown as ErrorWithMessage;
   }
 }
 
@@ -209,10 +210,20 @@ export interface FileUpload {
 
 export interface PricelistConfig {
   id?: string;
+  supplier_id?: string;
   supplier_name: string;
-  columns: Record<string, string>;
+  normalized_name?: string;
+  file_pattern?: string;
+  layout_type?: string;
+  column_mappings?: Record<string, string>;
+  columns?: Record<string, string>;
+  price_type?: 'cost' | 'retail' | 'selling';
+  price_rules?: Record<string, number | string | boolean>;
+  expected_brand?: string;
+  typical_price_range?: [number, number];
   created_at?: string;
   updated_at?: string;
+  last_used?: string;
 }
 
 export interface LearningFeedback {

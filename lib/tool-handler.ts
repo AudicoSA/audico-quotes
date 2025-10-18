@@ -23,10 +23,10 @@ export async function handleToolCall(toolCall: ToolCallType): Promise<SearchResu
 
   switch (name) {
     case "search_products":
-      return await searchProducts(args as SearchArguments);
+      return await searchProducts(args as unknown as SearchArguments);
 
     case "add_to_quote":
-      return await addToQuote(args as AddToQuoteArguments);
+      return await addToQuote(args as unknown as AddToQuoteArguments);
 
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -90,12 +90,11 @@ async function addToQuote(args: AddToQuoteArguments): Promise<AddToQuoteResult> 
 
     const data = await response.json();
 
-    console.log(`[Quote Updated] Added ${args.quantity}x ${data.product.name}`);
+    console.log(`[Quote Updated] Added ${args.quantity}x product`);
 
     return {
       success: true,
       line_item: data.line_item,
-      product: data.product,
       message: data.message,
     };
   } catch (error: unknown) {
@@ -153,11 +152,9 @@ function formatQuoteUpdate(result: AddToQuoteResult): string {
     return `Failed to add to quote: ${result.error}`;
   }
 
-  const { product, line_item } = result;
+  if (result.line_item) {
+    return `✓ Added to quote: ${result.line_item.quantity}x product (ID: ${result.line_item.product_id})`;
+  }
 
-  return `✓ Added to quote:
-${line_item.quantity}x ${product.name} (${product.sku})
-Unit Price: R${product.price.toLocaleString()}
-Total: R${line_item.total_price.toLocaleString()}
-Stock: ${product.stock.total} available`;
+  return result.message || 'Product added to quote successfully';
 }
