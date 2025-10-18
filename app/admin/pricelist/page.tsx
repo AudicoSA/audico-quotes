@@ -3,12 +3,28 @@
 import { useState } from 'react';
 import { Upload, FileSpreadsheet, FileText, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
+interface UploadResult {
+  success: boolean;
+  products_extracted?: number;
+  products_saved?: number;
+  products_updated?: number;
+  products_skipped?: number;
+  warnings?: string[];
+  session_id?: string;
+  error?: string;
+}
+
+interface SupplierProfile {
+  supplier_name: string;
+  [key: string]: unknown;
+}
+
 export default function PricelistAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<UploadResult | null>(null);
   const [trainedSuppliers, setTrainedSuppliers] = useState<string[]>([]);
 
   const handleAuth = (e: React.FormEvent) => {
@@ -27,7 +43,7 @@ export default function PricelistAdminPage() {
       const res = await fetch('/api/admin/pricelist/config?action=list');
       const data = await res.json();
       if (data.success) {
-        setTrainedSuppliers(data.profiles.map((p: any) => p.supplier_name));
+        setTrainedSuppliers(data.profiles.map((p: SupplierProfile) => p.supplier_name));
       }
     } catch (err) {
       console.error('Failed to load profiles:', err);
@@ -58,8 +74,8 @@ export default function PricelistAdminPage() {
       }
 
       setResult(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }

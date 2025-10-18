@@ -3,12 +3,24 @@
 import { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, AlertCircle, Package } from 'lucide-react';
 
+interface ImportResult {
+  success: boolean;
+  stockCount?: number;
+  priceCount?: number;
+  merged?: number;
+  updated?: number;
+  added?: number;
+  errors?: number;
+  needsEmbeddings?: number;
+  error?: string;
+}
+
 export default function PlanetWorldProAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
   const [stockFile, setStockFile] = useState<File | null>(null);
   const [pricelistFile, setPricelistFile] = useState<File | null>(null);
 
@@ -66,8 +78,8 @@ export default function PlanetWorldProAdminPage() {
       } else {
         setError(data.error || 'Import failed');
       }
-    } catch (err: any) {
-      setError(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }
