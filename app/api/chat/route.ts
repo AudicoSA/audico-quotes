@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { chatTools, SYSTEM_PROMPT } from '@/lib/chat-tools';
+import {
+  OpenAIMessage,
+  OpenAITool,
+  ToolCallResult,
+  Product,
+  SearchArguments,
+  SearchResult,
+  AddToQuoteArguments,
+  AddToQuoteResult,
+  toErrorWithMessage,
+} from '@/lib/types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,7 +114,7 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
     let completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: conversationMessages,
-      tools: chatTools as any,
+      tools: chatTools as OpenAITool[],
       tool_choice: wantsProducts
         ? { type: "function", function: { name: "search_products" } }
         : 'auto',
@@ -111,7 +122,7 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
     });
 
     let assistantMessage = completion.choices[0].message;
-    const toolCallResults: any[] = [];
+    const toolCallResults: ToolCallResult[] = [];
 
     // Handle tool calls in a loop
     while (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -144,17 +155,17 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
         role: 'assistant',
         content: assistantMessage.content || '',
         tool_calls: assistantMessage.tool_calls,
-      } as any);
+      } as OpenAIMessage);
 
       toolResults.forEach((result) => {
-        conversationMessages.push(result as any);
+        conversationMessages.push(result as OpenAIMessage);
       });
 
       // Get next response from GPT
       completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: conversationMessages,
-        tools: chatTools as any,
+        tools: chatTools as OpenAITool[],
         tool_choice: 'auto',
         temperature: 0.7,
       });
@@ -176,13 +187,14 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
     }
 
     // Extract products from ALL tool results in this response
-    const extractedProducts: any[] = [];
+    const extractedProducts: Product[] = [];
     const searchResults = toolCallResults.filter(tcr => tcr.name === 'search_products');
     if (searchResults.length > 0) {
       // Combine products from all searches, taking top 5 from each
       searchResults.forEach(searchResult => {
-        if (searchResult.result.items) {
-          extractedProducts.push(...searchResult.result.items.slice(0, 5));
+        const result = searchResult.result as SearchResult;
+        if (result.items) {
+          extractedProducts.push(...result.items.slice(0, 5));
         }
       });
       // Deduplicate by product ID and limit to 10 total
@@ -254,12 +266,13 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
       toolCalls: toolCallResults,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error('Chat API error:', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('Chat API error:', err);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Internal server error',
+        error: err.message || 'Internal server error',
       },
       { status: 500 }
     );
@@ -270,17 +283,17 @@ ${systemRequirements.partial.length > 0 ? systemRequirements.partial.map(r => ` 
  * Server-side tool call handler
  * Executes tool calls using internal API calls
  */
-async function handleToolCallServerSide(toolCall: { name: string; arguments: any }): Promise<any> {
+async function handleToolCallServerSide(toolCall: { name: string; arguments: SearchArguments | AddToQuoteArguments }): Promise<SearchResult | AddToQuoteResult> {
   const { name, arguments: args } = toolCall;
 
   console.log(`[Server Tool Call] ${name}`, args);
 
   switch (name) {
     case 'search_products':
-      return await searchProductsServerSide(args);
+      return await searchProductsServerSide(args as SearchArguments);
 
     case 'add_to_quote':
-      return await addToQuoteServerSide(args);
+      return await addToQuoteServerSide(args as AddToQuoteArguments);
 
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -290,7 +303,7 @@ async function handleToolCallServerSide(toolCall: { name: string; arguments: any
 /**
  * Search products (server-side implementation)
  */
-async function searchProductsServerSide(args: any): Promise<any> {
+async function searchProductsServerSide(args: SearchArguments): Promise<SearchResult> {
   try {
     const { query, filters = {}, k = 100 } = args;
 
@@ -329,7 +342,7 @@ async function searchProductsServerSide(args: any): Promise<any> {
     }
 
     // Filter out bad quality products AND apply intelligent product-type filtering
-    const goodProducts = (data || []).filter((product: any) => {
+    const goodProducts = (data || []).filter((product: Product) => {
       // Exclude products with missing/empty name
       if (!product.product_name || product.product_name.trim() === '') {
         return false;
@@ -412,7 +425,7 @@ async function searchProductsServerSide(args: any): Promise<any> {
     });
 
     // Transform results with better product name formatting
-    const items = goodProducts.map((product: any) => {
+    const items = goodProducts.map((product: Product) => {
       // Build a readable product name: Brand + clean product name
       const brand = product.brand || 'Unknown';
       let productName = product.product_name || product.sku || 'Unknown Product';
@@ -496,11 +509,12 @@ async function searchProductsServerSide(args: any): Promise<any> {
       query: expandedQuery,
       filters: mergedFilters,
     };
-  } catch (error: any) {
-    console.error('[Server Search Error]', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('[Server Search Error]', err);
     return {
       success: false,
-      error: error.message,
+      error: err.message,
       count: 0,
       items: [],
     };
@@ -510,7 +524,7 @@ async function searchProductsServerSide(args: any): Promise<any> {
 /**
  * Add product to quote (server-side implementation)
  */
-async function addToQuoteServerSide(args: any): Promise<any> {
+async function addToQuoteServerSide(args: AddToQuoteArguments): Promise<AddToQuoteResult> {
   try {
     // This would normally call an internal quote service
     // For now, we'll return a placeholder response
@@ -522,11 +536,12 @@ async function addToQuoteServerSide(args: any): Promise<any> {
         quantity: args.quantity,
       },
     };
-  } catch (error: any) {
-    console.error('[Server Add to Quote Error]', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('[Server Add to Quote Error]', err);
     return {
       success: false,
-      error: error.message,
+      error: err.message,
     };
   }
 }
@@ -535,7 +550,7 @@ async function addToQuoteServerSide(args: any): Promise<any> {
  * GUARDRAILS: Validate and clean AI responses to enforce correct behavior
  * This ensures GPT-4o follows our rules even when it gets creative
  */
-function validateAndCleanResponse(message: any, toolCallResults: any[], messages: any[]): any {
+function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolCallResult[], messages: ChatMessage[]): OpenAIMessage {
   if (!message.content) return message;
 
   let content = message.content;

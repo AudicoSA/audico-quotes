@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { enhanceQuery, expandSynonyms, normalizeFilters } from '@/lib/query-enhancer';
+import { Product, toErrorWithMessage } from '@/lib/types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Transform results for response
-    const items = (data || []).map((product: any) => ({
+    const items = (data || []).map((product: Product) => ({
       id: product.id,
       name: product.product_name,
       sku: product.sku,
@@ -118,12 +119,13 @@ export async function POST(req: NextRequest) {
       count: items.length,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error('Search API error:', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('Search API error:', err);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Internal server error',
+        error: err.message || 'Internal server error',
       },
       { status: 500 }
     );

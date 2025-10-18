@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
+import { toErrorWithMessage, ExcelRow } from '@/lib/types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,24 +27,39 @@ export async function POST(request: NextRequest) {
     const stockSheet = stockWorkbook.Sheets[stockWorkbook.SheetNames[0]];
     const stockRaw = XLSX.utils.sheet_to_json(stockSheet);
 
-    const stockData = new Map();
-    stockRaw.slice(1).forEach((row: any) => {
-      const sku = row['__EMPTY'];
-      const stock = parseInt(row['__EMPTY_2']) || 0;
+    interface StockItem {
+      brand: string;
+      sku: string;
+      description: string;
+      stock: number;
+    }
+
+    const stockData = new Map<string, StockItem>();
+    stockRaw.slice(1).forEach((row) => {
+      const typedRow = row as ExcelRow;
+      const sku = typedRow['__EMPTY'];
+      const stock = parseInt(String(typedRow['__EMPTY_2'] || '0')) || 0;
       if (sku && stock > 0) {
-        stockData.set(sku, {
-          brand: row['PLANETWORLD\nSTOCK ON HAND'] || '',
-          sku: sku,
-          description: row['__EMPTY_1'] || '',
+        stockData.set(String(sku), {
+          brand: String(typedRow['PLANETWORLD\nSTOCK ON HAND'] || ''),
+          sku: String(sku),
+          description: String(typedRow['__EMPTY_1'] || ''),
           stock: stock,
         });
       }
     });
 
     // Step 2: Parse Pricelist file (all 20 brand sheets)
+    interface PriceItem {
+      brand: string;
+      sku: string;
+      description: string;
+      retailPrice: number;
+    }
+
     const priceBuffer = Buffer.from(await pricelistFile.arrayBuffer());
     const priceWorkbook = XLSX.read(priceBuffer);
-    const priceData = new Map();
+    const priceData = new Map<string, PriceItem>();
 
     priceWorkbook.SheetNames.forEach((sheetName: string) => {
       if (sheetName === 'INDEX') return; // Skip index
@@ -51,16 +67,17 @@ export async function POST(request: NextRequest) {
       const sheet = priceWorkbook.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(sheet);
 
-      rows.slice(2).forEach((row: any) => {
-        const sku = row['__EMPTY'];
-        const description = row[Object.keys(row)[0]];
-        const priceExclVat = parseFloat(row['__EMPTY_2']) || 0;
+      rows.slice(2).forEach((row) => {
+        const typedRow = row as ExcelRow;
+        const sku = typedRow['__EMPTY'];
+        const description = typedRow[Object.keys(typedRow)[0]];
+        const priceExclVat = parseFloat(String(typedRow['__EMPTY_2'] || '0')) || 0;
 
         if (sku && priceExclVat > 0) {
-          priceData.set(sku, {
+          priceData.set(String(sku), {
             brand: sheetName,
-            sku: sku,
-            description: description,
+            sku: String(sku),
+            description: String(description || ''),
             retailPrice: priceExclVat,
           });
         }
@@ -68,7 +85,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 3: Merge stock + price data
-    const mergedProducts = [];
+    interface MergedProduct {
+      sku: string;
+      brand: string;
+      name: string;
+      retailPrice: number;
+      stock: number;
+    }
+
+    const mergedProducts: MergedProduct[] = [];
     stockData.forEach((stockItem, sku) => {
       const priceItem = priceData.get(sku);
       if (priceItem) {
@@ -183,10 +208,11 @@ export async function POST(request: NextRequest) {
       errors,
       needsEmbeddings: updated + added,
     });
-  } catch (error: any) {
-    console.error('Import error:', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('Import error:', err);
     return NextResponse.json(
-      { success: false, error: error.message || 'Import failed' },
+      { success: false, error: err.message || 'Import failed' },
       { status: 500 }
     );
   }

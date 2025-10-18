@@ -3,43 +3,30 @@
  * Routes tool calls to appropriate API endpoints
  */
 
-interface ToolCall {
-  name: string;
-  arguments: any;
-}
-
-interface SearchArgs {
-  query: string;
-  filters?: {
-    min_price?: number;
-    max_price?: number;
-    brand?: string;
-    category?: string;
-    in_stock_only?: boolean;
-  };
-  k?: number;
-}
-
-interface AddToQuoteArgs {
-  product_id: string;
-  quantity: number;
-}
+import {
+  ToolCall as ToolCallType,
+  SearchArguments,
+  AddToQuoteArguments,
+  SearchResult,
+  AddToQuoteResult,
+  toErrorWithMessage,
+} from './types';
 
 /**
  * Main tool call handler
  * Routes function calls to appropriate implementations
  */
-export async function handleToolCall(toolCall: ToolCall): Promise<any> {
+export async function handleToolCall(toolCall: ToolCallType): Promise<SearchResult | AddToQuoteResult> {
   const { name, arguments: args } = toolCall;
 
   console.log(`[Tool Call] ${name}`, args);
 
   switch (name) {
     case "search_products":
-      return await searchProducts(args as SearchArgs);
+      return await searchProducts(args as SearchArguments);
 
     case "add_to_quote":
-      return await addToQuote(args as AddToQuoteArgs);
+      return await addToQuote(args as AddToQuoteArguments);
 
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -49,7 +36,7 @@ export async function handleToolCall(toolCall: ToolCall): Promise<any> {
 /**
  * Search products using hybrid search API
  */
-async function searchProducts(args: SearchArgs): Promise<any> {
+async function searchProducts(args: SearchArguments): Promise<SearchResult> {
   try {
     const response = await fetch('/api/search', {
       method: 'POST',
@@ -73,11 +60,12 @@ async function searchProducts(args: SearchArgs): Promise<any> {
       query: data.query,
       filters: data.filters,
     };
-  } catch (error: any) {
-    console.error('[Search Error]', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('[Search Error]', err);
     return {
       success: false,
-      error: error.message,
+      error: err.message,
       count: 0,
       items: [],
     };
@@ -87,7 +75,7 @@ async function searchProducts(args: SearchArgs): Promise<any> {
 /**
  * Add product to quote
  */
-async function addToQuote(args: AddToQuoteArgs): Promise<any> {
+async function addToQuote(args: AddToQuoteArguments): Promise<AddToQuoteResult> {
   try {
     const response = await fetch('/api/quote/add', {
       method: 'POST',
@@ -110,11 +98,12 @@ async function addToQuote(args: AddToQuoteArgs): Promise<any> {
       product: data.product,
       message: data.message,
     };
-  } catch (error: any) {
-    console.error('[Add to Quote Error]', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('[Add to Quote Error]', err);
     return {
       success: false,
-      error: error.message,
+      error: err.message,
     };
   }
 }
@@ -123,20 +112,20 @@ async function addToQuote(args: AddToQuoteArgs): Promise<any> {
  * Format tool results for display
  * Converts API responses to human-readable format
  */
-export function formatToolResult(toolName: string, result: any): string {
+export function formatToolResult(toolName: string, result: SearchResult | AddToQuoteResult): string {
   switch (toolName) {
     case "search_products":
-      return formatSearchResults(result);
+      return formatSearchResults(result as SearchResult);
 
     case "add_to_quote":
-      return formatQuoteUpdate(result);
+      return formatQuoteUpdate(result as AddToQuoteResult);
 
     default:
       return JSON.stringify(result, null, 2);
   }
 }
 
-function formatSearchResults(result: any): string {
+function formatSearchResults(result: SearchResult): string {
   if (!result.success || result.count === 0) {
     return `No products found for "${result.query}"`;
   }
@@ -145,7 +134,7 @@ function formatSearchResults(result: any): string {
 
   let output = `Found ${result.count} products:\n\n`;
 
-  items.forEach((item: any, index: number) => {
+  items.forEach((item, index: number) => {
     output += `${index + 1}. ${item.name}\n`;
     output += `   SKU: ${item.sku} | Brand: ${item.brand}\n`;
     output += `   Price: R${item.price.toLocaleString()} | Stock: ${item.stock.total}\n`;
@@ -159,7 +148,7 @@ function formatSearchResults(result: any): string {
   return output;
 }
 
-function formatQuoteUpdate(result: any): string {
+function formatQuoteUpdate(result: AddToQuoteResult): string {
   if (!result.success) {
     return `Failed to add to quote: ${result.error}`;
   }

@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { Product } from './types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -109,9 +110,9 @@ export function calculateBoosts(scores: Map<string, ProductScore>): Map<string, 
  * Apply learning boosts to search results
  */
 export function applyLearningBoosts(
-  products: any[],
+  products: Product[],
   boosts: Map<string, LearningBoost>
-): any[] {
+): Product[] {
   // Apply boosts to product scores
   const boostedProducts = products.map(product => {
     const boost = boosts.get(product.id);
@@ -215,9 +216,9 @@ export async function getCategoryPreferences(chatType: string): Promise<Map<stri
  * Main learning function: Apply all learning to search results
  */
 export async function enhanceSearchWithLearning(
-  products: any[],
+  products: Product[],
   chatType: string
-): Promise<any[]> {
+): Promise<Product[]> {
   try {
     // Get product performance scores
     const scores = await getProductScores();

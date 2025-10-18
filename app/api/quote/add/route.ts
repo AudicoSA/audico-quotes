@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { toErrorWithMessage } from '@/lib/types';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -108,12 +109,13 @@ export async function POST(req: NextRequest) {
       },
       message: `Added ${quantity}x ${product.product_name} to quote`,
     });
-  } catch (error: any) {
-    console.error('Add to quote error:', error);
+  } catch (error: unknown) {
+    const err = toErrorWithMessage(error);
+    console.error('Add to quote error:', err);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Internal server error',
+        error: err.message || 'Internal server error',
       },
       { status: 500 }
     );

@@ -177,12 +177,13 @@ export default function ChatInterface({ chatType, onAddProduct, onSwitchTab, cur
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Please try again.';
       console.error('Chat error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error.message || 'Please try again.'}`,
+        content: `Sorry, I encountered an error: ${errMsg}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);

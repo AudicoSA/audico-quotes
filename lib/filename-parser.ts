@@ -160,10 +160,26 @@ export function parseFilename(filename: string): ParsedFilename {
   };
 }
 
+interface SupplierPriceRule {
+  supplier_name: string;
+  price_type: 'cost' | 'retail' | 'selling';
+  price_rules: {
+    includes_vat?: boolean;
+    apply_vat?: boolean;
+    vat_rate?: number;
+    discount_from_retail?: number;
+    cost_multiplier?: number;
+    retail_markup?: number;
+    description: string;
+  };
+  expected_brand?: string;
+  notes?: string;
+}
+
 /**
  * Known supplier-specific price rules
  */
-export const SUPPLIER_PRICE_RULES: Record<string, any> = {
+export const SUPPLIER_PRICE_RULES: Record<string, SupplierPriceRule> = {
   'bowerswilkins': {
     supplier_name: 'Bowers & Wilkins',
     price_type: 'retail',
@@ -208,6 +224,6 @@ export const SUPPLIER_PRICE_RULES: Record<string, any> = {
 /**
  * Get price rules for a supplier (by normalized name)
  */
-export function getSupplierPriceRules(normalizedName: string): any | null {
+export function getSupplierPriceRules(normalizedName: string): SupplierPriceRule | null {
   return SUPPLIER_PRICE_RULES[normalizedName] || null;
 }
