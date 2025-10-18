@@ -579,7 +579,16 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
     console.log('[GUARDRAIL] Stripped markdown links from response');
   }
 
-  // GUARDRAIL 2: Strip product price mentions in text
+  // GUARDRAIL 2: Strip tool call syntax that might be visible to users
+  // Remove patterns like *search_products(query="...", brand="...", k=5)*
+  const toolCallPattern = /\*\w+\([^)]*\)\*/g;
+  const hadToolCalls = toolCallPattern.test(content);
+  if (hadToolCalls) {
+    content = content.replace(toolCallPattern, '');
+    console.log('[GUARDRAIL] Stripped tool call syntax from response');
+  }
+
+  // GUARDRAIL 3: Strip product price mentions in text
   // Prices should only appear in product cards, not in AI's message
   const pricePattern = /(?:ZAR|R)\s*[\d,]+(?:\.\d{2})?/g;
   const hadPrices = pricePattern.test(content);
@@ -588,7 +597,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
     console.log('[GUARDRAIL] Stripped price mentions from response');
   }
 
-  // GUARDRAIL 3: Remove numbered/bulleted PRODUCT lists (but preserve discovery questions)
+  // GUARDRAIL 4: Remove numbered/bulleted PRODUCT lists (but preserve discovery questions)
   // Products should appear as cards, not as text lists
   // Match: "1. **ProductName** - description" or "- **ProductName** price"
   const productListPattern = /(?:^|\n)(?:\d+\.|[-•*])\s*\*\*[^\n]+\*\*[^\n]*(?:R[\d,]+|ZAR)/gm;
@@ -608,7 +617,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
 
   console.log('[GUARDRAIL DEBUG] After removing product lists, length:', content.length);
 
-  // GUARDRAIL 4: Enforce brevity (max 5 sentences or 600 chars)
+  // GUARDRAIL 5: Enforce brevity (max 5 sentences or 600 chars)
   // BUT allow discovery questions (numbered lists) - they're critical for consultation
   const hasNumberedList = /\n\s*\d+\./.test(content);
   console.log('[GUARDRAIL DEBUG] Has numbered list:', hasNumberedList);
@@ -639,7 +648,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
     }
   }
 
-  // GUARDRAIL 5: Prevent AI from lying about adding products to quote
+  // GUARDRAIL 6: Prevent AI from lying about adding products to quote
   // AI MUST NOT say "added to quote" unless it actually called add_to_quote tool
   const hasAddToQuoteTool = toolCallResults.some(r => r.name === 'add_to_quote');
   const claimsAdded = /(?:added|successfully added|has been added|i've added|now added).*(?:to|your) quote/i.test(content);
@@ -655,7 +664,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
     console.log('[GUARDRAIL] Removed false "added to quote" claim - AI did not call add_to_quote');
   }
 
-  // GUARDRAIL 6: Prevent repetition - check if response is similar to last message
+  // GUARDRAIL 7: Prevent repetition - check if response is similar to last message
   if (messages.length > 2) {
     const lastAIMessage = messages[messages.length - 2];
     if (lastAIMessage?.role === 'assistant' && lastAIMessage.content) {
@@ -669,13 +678,13 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
       const similarity = overlap / Math.min(lastWords.length, currentWords.length);
 
       if (similarity > 0.7) {
-        content = "I notice I'm repeating myself. Let me know what specific component you'd like to explore next, or if you'd like to review what we've selected so far?";
+        content = "Let me know what specific component you'd like to explore next, or if you'd like to review what we've selected so far?";
         console.log('[GUARDRAIL] Prevented repetitive response (similarity:', similarity.toFixed(2), ')');
       }
     }
   }
 
-  // GUARDRAIL 7: Ensure response ends with directive/question
+  // GUARDRAIL 8: Ensure response ends with directive/question
   // AI should always guide the customer forward
   const endsWithAction = /[.!?]$/.test(content.trim());
   const hasQuestion = /\?/.test(content);
@@ -697,6 +706,7 @@ function validateAndCleanResponse(message: OpenAIMessage, toolCallResults: ToolC
   if (content !== originalContent) {
     console.log('[GUARDRAIL] Response cleaned:', {
       hadLinks,
+      hadToolCalls,
       hadPrices,
       hadLists,
       originalLength: originalContent.length,
