@@ -101,20 +101,32 @@ export const chatTools = [
 // ============================================================================
 const BRAND_NAMES = `
 🚨 CRITICAL BRAND RECOGNITION:
-When customer mentions these words, recognize as BRAND NAME and use brand filter:
+When customer mentions these words, recognize as BRAND NAME:
 
-- "monitor audio" → brand="Monitor Audio" (NOT "monitor" as separate word)
-- "b&w" or "b and w" or "bowers" → brand="Bowers & Wilkins"
-- "klipsch" → brand="Klipsch"
-- "denon" → brand="Denon"
-- "marantz" → brand="Marantz"
-- "polk" or "polk audio" → brand="Polk Audio"
-- "yamaha" → brand="Yamaha"
-- "jbl" → brand="JBL"
-- "kef" → brand="KEF"
-- "q acoustics" → brand="Q Acoustics"
+HOME CINEMA SPEAKERS (IN STOCK):
+- "monitor audio" → brand="Monitor Audio" ✅
+- "klipsch" → brand="Klipsch" ✅
+- "polk" or "polk audio" → brand="Polk Audio" ✅
+- "kef" → brand="KEF" ✅
+- "jbl" → brand="JBL" ✅
+- "q acoustics" → brand="Q Acoustics" ✅
+- "dali" → brand="Dali" ✅
+- "svs" → brand="SVS" (subwoofers) ✅
+- "rel" → brand="REL" (subwoofers) ✅
 
-Example: User says "monitor audio" → search_products(query="speakers", brand="Monitor Audio")
+AV RECEIVERS (IN STOCK):
+- "denon" → brand="Denon" ✅
+- "marantz" → brand="Marantz" ✅
+- "yamaha" → brand="Yamaha" ✅
+- "anthem" → brand="Anthem" ✅
+
+🚨 BRANDS WE DON'T STOCK (Important!):
+- "b&w" / "bowers & wilkins" → ❌ Only have headphones, NO SPEAKERS
+  - If customer asks for B&W speakers, say:
+    "We don't currently stock Bowers & Wilkins speakers. Would you like Monitor Audio, KEF, or Klipsch instead?"
+
+When searching, include brand IN THE QUERY TEXT, not as filter!
+Example: search_products(query="monitor audio floorstanding speakers", k=5)
 `;
 
 // ============================================================================
